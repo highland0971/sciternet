@@ -1,0 +1,64 @@
+<script src="/luci-static/bootstrap/Chart.min.js"></script>
+<script src="/luci-static/bootstrap/jquery-1.11.3.min.js"></script>
+
+<script type="text/javascript">
+
+var gdata
+
+$( document ).ready(function() {
+	console.log( "document loaded" );
+
+	Chart.defaults.global.responsive = true;
+
+	var ctx = $("#myChart").get(0).getContext("2d");
+	var myNewChart = new Chart(ctx);
+	var token = "<%= luci.model.uci.cursor().get('sciternet','system','token') %>";
+	var api = "http://104.129.0.243/get_client_usage/"+token+"/?jsoncallback=?";
+	var jqxhr = $.getJSON(api,function(vol){
+	vol_accu = new Array();
+	for (index in vol)
+	{
+		if ( index > 1)
+		{
+			vol_accu[index] = vol[index]+vol_accu[index-1];
+		}
+		else
+		{
+			vol_accu[index] = vol[index];
+		}	
+	}
+	 gdata = {
+		labels: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31],
+		datasets: [
+        		{
+            		label: "PerDay",
+            		fillColor: "rgba(220,220,220,0.2)",
+            		strokeColor: "rgba(220,220,220,1)",
+            		pointColor: "rgba(220,220,220,1)",
+            		pointStrokeColor: "#fff",
+            		pointHighlightFill: "#fff",
+            		pointHighlightStroke: "rgba(220,220,220,1)",
+            		data: vol
+        		},
+			{
+                        label: "Accumulated",
+                        fillColor: "rgba(151,187,205,0.2)",
+                        strokeColor: "rgba(151,187,205,1)",
+                        pointColor:"rgba(151,187,205,1)",
+                        pointStrokeColor: "#fff",
+                        pointHighlightFill: "#fff",
+                        pointHighlightStroke: "rgba(220,220,220,1)",
+                        data: vol_accu
+                        },
+
+    		]
+   	};
+	var myLineChart =  myNewChart.Line(gdata);
+	});
+});
+
+</script>
+
+<div class="canvas-holder">
+    <canvas id="myChart" width="20" height="5"></canvas>
+</div>

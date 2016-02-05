@@ -1,0 +1,46 @@
+#!/bin/sh /etc/rc.common
+
+START=89
+STOP=16
+LOG=/var/log/sciternet.log
+[ ! -s $LOG ] && touch $LOG
+
+
+boot(){
+        echo $0 $(date) "Starting sciternet on booting..." >> $LOG
+        while [ "1" = "1" ]
+        do
+                nslookup ftp.apnic.net && break
+                str="Waiting network to be ready..."
+                echo $0 $(date) $str >> $LOG && echo $0 $(date) $str
+                sleep 1
+        done
+        start fresh_cnlist
+        echo $0 $(date) "Starting complete" >> $LOG
+
+        if [ "$(uci get sciternet.system.auto_upgrade)" = 1 ]; then
+                upgrade
+        fi
+}
+
+start() {
+        echo $0 $(date) "Starting service..." >> $LOG
+        if [ "$(uci get sciternet.system.auto_start)" = 1 ]; then
+                /usr/bin/sciternet_sync.sh start $1
+                echo $0 $(date) "Starting service complete." >> $LOG
+        else
+                echo $0 $(date) "Service has been disabled,starting abort..." >> $LOG
+                stop
+        fi
+}
+
+stop() {
+        echo $0 $(date) "Stopping service..." >> $LOG
+        /usr/bin/sciternet_sync.sh stop
+        echo $0 $(date) "Stopping service complete." >> $LOG
+}
+
+upgrade(){
+        /usr/bin/sciternet_sync.sh upgrade
+}
+

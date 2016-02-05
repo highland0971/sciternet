@@ -1,0 +1,13 @@
+
+config sciternet 'system'
+	option server '104.129.0.243'
+	option dnsProvider '104.129.0.243'
+	option auto_upgrade '1'
+	option auto_start '1'
+	option email '15802221580@139.com'
+	option password 'toshiba'
+	option token 'gxxuessme'
+
+config sciternet 'ui'
+	option auto_refresh '1'
+

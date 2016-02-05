@@ -1,0 +1,245 @@
+<script src="/luci-static/bootstrap/Chart.min.js"></script>
+<script src="/luci-static/bootstrap/jquery-1.11.3.min.js"></script>
+<link rel="stylesheet" href="/luci-static/bootstrap/cascade.css">
+
+<script type="text/javascript">
+
+var gdata;
+
+$( document ).ready(function() {
+	console.log( "trace document loaded" );
+});
+
+function verifyURL()
+{
+	console.log( "trace document started" );
+	var verifyUrls = new Array();
+	var results = new Array();
+	var domain_urls_mapping = new Array();
+	gdata = domain_urls_mapping;
+	var mainTarget = $("[name$='cbid.sciternet.ui.traceurl']").val();
+	console.log(mainTarget);
+	var url = "<%= luci.dispatcher.build_url('admin/services/sciternet/domainverify') %>";
+	console.log(url);
+	
+	$("#traceTable .verify_row").remove();
+	row = document.createElement("tr");
+	row.setAttribute("class","verify_row");
+	main_domain_col = document.createElement("td");
+	main_domain_result_col = document.createElement("td");
+	main_domain_hack_col = document.createElement("td");
+	main_domain_hack_col.setAttribute("id","domain_hack_col");
+	main_domain_col.innerHTML = mainTarget;
+	main_domain_result_col.innerHTML = "Running...";
+	main_domain_hack_col.innerHTML = "Pending...";
+	row.appendChild(main_domain_col);
+	row.appendChild(main_domain_result_col);
+	row.appendChild(main_domain_hack_col);
+	$("#traceTable").append(row);
+
+	$.getJSON(url,{target:mainTarget},function( data ) {
+		main_domain_result_col.innerHTML = "Running...";
+
+		var text_domains = new Array();
+		var text_direct_results = new Array();
+		var hack_domain_inputs = new Array();
+		var totals = new Array();
+		var succCounts = new Array();
+		var failCounts = new Array();
+		var verified = 0;
+		var toBeVerified = 0;	
+		for (var domain in data){
+			text_domains[domain] = document.createTextNode(">>"+domain);
+			text_direct_results[domain] = document.createTextNode("0/"+data[domain].length);
+			hack_domain_inputs[domain] = document.createElement("input");
+			hack_domain_inputs[domain].setAttribute("type","checkbox");
+			hack_domain_inputs[domain].setAttribute("target_domain",domain);
+			hack_domain_inputs[domain].setAttribute("disabled","1");
+
+			row = document.createElement("tr");
+			row.setAttribute("class","verify_row");
+			row.setAttribute("domain",domain);
+
+			td_domain = document.createElement("td");
+			td_domain.appendChild(text_domains[domain]);
+
+			td_direct_result = document.createElement("td");
+			td_direct_result.appendChild(text_direct_results[domain]);
+			
+			td_domain_hack = document.createElement("td");
+			td_domain_hack.setAttribute("class","domain_hack");
+			//td_domain_hack.innerHTML = "pending.";
+
+			td_submit_required = document.createElement("td");
+			td_submit_required.appendChild(hack_domain_inputs[domain]);
+
+			row.appendChild(td_domain);
+			row.appendChild(td_direct_result);
+			row.appendChild(td_domain_hack);
+			row.appendChild(td_submit_required);
+			$("#traceTable").append(row);
+
+			succCounts[domain] = 0;
+			failCounts[domain] = 0;
+			domain_urls_mapping[domain] = {"succ":new Array(),"fail":new Array()}
+			totals[domain] = data[domain].length;
+		};
+		for (var domain in data){
+			for (var index in data[domain]){
+                                urlverify_url = "<%= luci.dispatcher.build_url('admin/services/sciternet/urlverify') %>";
+				toBeVerified = toBeVerified + 1;
+                                $.get(urlverify_url,{urlTarget:data[domain][index]},function(subdomain){
+                                        succCounts[subdomain] = succCounts[subdomain] + 1;
+					if(data[subdomain])
+						domain_urls_mapping[subdomain]["succ"].push(data[subdomain][index]);
+                                })
+                                .fail(function(response){
+					subdomain = response.responseText;
+                                        failCounts[subdomain] = failCounts[subdomain] + 1;
+					console.log("Failed with "+ data[subdomain][index]);
+					if(data[subdomain])
+						domain_urls_mapping[subdomain]["fail"].push(data[subdomain][index]);
+                                })
+                                .always(function(response){
+					verified = verified + 1;
+					if(typeof(response) == typeof("string"))	
+						text_direct_results[response].data = "+"+succCounts[response]+ "/-"+failCounts[response]+"/"+totals[response];
+					else{
+						subdomain = response.responseText;
+						text_direct_results[subdomain].data = "+"+succCounts[subdomain]+ "/-"+failCounts[subdomain]+"/"+totals[subdomain];
+					}
+                                        if (verified == toBeVerified){
+                                                main_domain_result_col.innerHTML = "Completed";
+						for(var idomain in text_direct_results)
+						{
+							if(succCounts[idomain]/totals[idomain] >= 0.6)
+								text_direct_results[idomain].data = "Pass";
+							else
+								text_direct_results[idomain].data = "Fail"; 
+						}
+						domainHackTest(domain_urls_mapping);
+                                        }
+                                });
+                        }
+		};
+	})
+	.fail(function(data){
+		main_domain_result_col.innerHTML = "Unexpected error occured";
+	});
+}
+
+function domainHackTest(domains)
+{
+	var toBeVerified = 0;
+	var verified = 0;
+	crackDomains = "";
+	crackDomainUrl = "<%= luci.dispatcher.build_url('admin/services/sciternet/domain_hack_test') %>";
+	domain_verify_success = new Array();
+	domain_verify_tried = new Array();
+	for(var domain in domains){
+		if( domains[domain]["fail"].length > 0 ){
+			crackDomains = crackDomains+","+domain;
+		}
+	}
+	if(crackDomains){
+		$.get(crackDomainUrl,{domains:crackDomains})
+		.done(function(result){
+			urlverify_url = "<%= luci.dispatcher.build_url('admin/services/sciternet/urlverify') %>";
+			for (var domain in domains)
+			{
+				domain_verify_success[domain] = 0;
+				domain_verify_tried[domain] = 0;
+				if( domains[domain]["succ"].length /(domains[domain]["fail"].length + domains[domain]["succ"].length) < 0.6){
+					verifyCol = $("[class = 'verify_row'][domain='"+domain+"']").children(".domain_hack")[0];
+					verifyCol.innerHTML = "Trying...";
+					for (var url in domains[domain]["fail"])
+					{
+						toBeVerified = toBeVerified +1 ;
+						targetUrl = domains[domain]["fail"][url]
+                         			$.get(urlverify_url,{urlTarget: targetUrl},function(result){
+							domain_verify_success[result] = domain_verify_success[result] + 1;
+						})
+						.fail(function(data){
+						
+						})
+						.always(function(data){
+							var domain;
+							if(typeof(data) == typeof("string"))
+							{
+								domain_verify_tried[data] = domain_verify_tried[data] + 1;
+								domain = data;
+							}
+							else
+							{
+								domain_verify_tried[data.responseText] = domain_verify_tried[data.responseText] + 1;
+								domain = data.responseText;
+							}
+							if(domain_verify_tried[domain] == domains[domain]["fail"].length){
+								verifyCol = $("[class = 'verify_row'][domain='"+domain+"']").children(".domain_hack")[0];
+								if ( domain_verify_success[domain] / domains[domain]["fail"].length > 0.5 ){
+                                                			verifyCol.innerHTML = "Pass";
+									$(":checkbox[target_domain='"+domain+"']")[0].setAttribute("checked","checked");
+								}
+								else
+									verifyCol.innerHTML = "Fail";
+
+							}
+							verified = verified + 1;
+							if(verified == toBeVerified)
+							{
+								$("#domain_hack_col")[0].innerHTML = "Complete";
+								$(":button[name='cbid.sciternet.ui.apply_bt']")[0].removeAttribute("disabled");
+							}
+
+						});
+                	                }
+				}
+			}
+			console.log("domain hack completed.")
+		});
+	}
+}
+
+function applyDomainHack()
+{
+	crackDomainUrl = "<%= luci.dispatcher.build_url('admin/services/sciternet/apply_custom_domain_hack') %>";
+	console.log("Domain Hack Started");
+	var checkbox_domains = $(":checkbox[checked][target_domain]");
+	var crack_domains = "";
+	checkbox_domains.each(function(index,element){
+		console.log(element.getAttribute('target_domain')+ "need to be crack.");
+		crack_domains = crack_domains + "," + element.getAttribute('target_domain');
+	});
+	console.log("Total need to be hacked domain:"+crack_domains);
+	$.get(crackDomainUrl,{domains:crack_domains},function(result){
+		console.log('result:'+result);
+		alert("Apply result:"+result);
+	});
+}
+
+</script>
+
+<div class="cbi-value" id="cbi-sciternet-ui-traceurl">
+	<label class="cbi-value-title" for="cbid.sciternet.ui.traceurl">Trace URL</label>
+		<div class="cbi-value-field">
+			<input type="text" class="cbi-input-text" onchange="cbi_d_update(this.id)" name="cbid.sciternet.ui.traceurl" id="cbid.sciternet.ui.traceurl" value="https://vimeo.com/">
+		</div>
+</div>
+
+<div class="cbi-value" id="cbi-sciternet-ui-bt-verify">
+        <label class="cbi-value-title" for="cbid.sciternet.ui.verify_bt"></label>
+                <div class="cbi-value-field">
+                        <input type="button" class="cbi-button cbi-button-apply" name="cbid.sciternet.ui.verify_bt" id="cbid.sciternet.ui.verify_bt" value="Verify" onclick="verifyURL()">
+                        <input type="button" class="cbi-button cbi-button-add" name="cbid.sciternet.ui.apply_bt" id="cbid.sciternet.ui.apply_bt" value="Apply" onclick="applyDomainHack()" disabled>
+                </div>
+
+</div>
+
+<table id="traceTable">
+	<tr>
+		<th>Verify Target</th>
+		<th>Direct Test</th>
+		<th>Domain Hack</th>
+		<th>Domain hack required</th>
+	</tr>
+</table>

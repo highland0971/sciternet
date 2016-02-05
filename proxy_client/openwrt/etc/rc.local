@@ -1,0 +1,10 @@
+# Put your custom commands here that should be executed once
+# the system init finished. By default this file does nothing.
+
+domain="www.routerlogin.net"
+sed -i /$domain/d /etc/hosts && echo $(ifconfig br-lan | grep 'inet addr'|awk '{print $2}'|awk -F ':' '{print $2}') $domain >> /etc/hosts
+domain="sciternet.net"
+sed -i /$domain/d /etc/hosts && echo $(ifconfig br-lan | grep 'inet addr'|awk '{print $2}'|awk -F ':' '{print $2}') $domain >> /etc/hosts
+
+
+exit 0

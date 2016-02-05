@@ -1,0 +1,50 @@
+<script src="/luci-static/bootstrap/jquery-1.11.3.min.js"></script>
+<link rel="stylesheet" href="/luci-static/bootstrap/cascade.css">
+
+<div class="cbi-value" id="cbi-sciternet-ui-bt-service-action">
+        <label class="cbi-value-title" for="cbid.sciternet.ui.service_switch_bt"></label>
+                <div class="cbi-value-field">
+                        <input type="button" class="cbi-button cbi-button-apply " name="cbid.sciternet.ui.service_start_bt" id="cbid.sciternet.ui.service_start_bt" value="Start" onclick="start_service()">
+			<input type="button" class="cbi-button cbi-button-reset " name="cbid.sciternet.ui.service_stop_bt" id="cbid.sciternet.ui.service_stop_bt" value="Stop" onclick="stop_service()">
+                </div>
+
+</div>
+
+<script type="text/javascript">
+
+function start_service()
+{
+	console.log("start service");
+        url = "<%= luci.dispatcher.build_url('admin/services/sciternet/start_service') %>";
+	$.getJSON(url,function(result){
+	});
+}
+
+function stop_service()
+{
+	console.log("stop service");
+        url = "<%= luci.dispatcher.build_url('admin/services/sciternet/stop_service') %>";
+	$.getJSON(url,function(result){
+        });
+
+}
+
+function monitor_service_status()
+{
+	console.log("watch dog tick");
+	watchDogUrl = "<%= luci.dispatcher.build_url('admin/services/sciternet/service_watch_dog') %>";
+	$.getJSON(watchDogUrl,function(result){
+		var descriptor = $(".cbi-map-descr")[0];
+		descriptor.innerHTML = result;
+	});
+	setTimeout("monitor_service_status()",5000);
+
+}
+
+$( document ).ready(function() {
+        console.log( "Account Document loaded" );
+	monitor_service_status();
+});
+
+</script>
+
