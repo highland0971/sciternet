@@ -32,7 +32,7 @@ urls = (
 	"/get_client_usage/(.+)/","report_client_usage",
 	"/request_avail_server/(.+)","request_avail_proxy_server",
 	"/request_dynamic_router/(.+)/(.+)/(.+)","request_dynamic_proxy_server",
-	"/request_www_guide","request_www_guide",
+	"/request_www_guide/","request_www_guide",
 )
 
 FIRMWARE_PATH = '/var/www/router/static/firmware'

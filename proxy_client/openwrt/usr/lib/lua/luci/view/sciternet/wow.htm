@@ -1,14 +1,37 @@
 <%+header%>
 
-<p>Still in building....Demo links followed</p>
+<script src="/luci-static/bootstrap/jquery-1.11.3.min.js"></script>
 
-<a href="https://plus.google.com/">Google+</a><br>
-<a href="https://www.youtube.com/">Youtube</a><br>
-<a href="http://boxun.com/">BoXun News</a><br>
-<a href="http://www.nytimes.com/">New York Times</a><br>
-<a href="http://www.backchina.com/">Back China</a><br>
-<a href="http://91porn.com/">91 Porn</a><br>
+<main>
+<div class="status">
+</div>
+<div class="guide">
 
+</div>
+</main>
 
+<script type="text/javascript">
+
+$( document ).ready(function() {
+	var master = "<%= luci.model.uci.cursor().get('sciternet','system','server') %>";
+	console.log("Master server is "+master);
+	var api = "http://"+master+"/request_www_guide/?jsoncallback=?";
+	var jqxhr = $.getJSON(api,function(domains){
+		console.log(domains);
+		var guide = $("div.guide")[0];
+		for(var cat in domains){
+			ul = document.createElement("ul");
+			ul.innerHTML = cat;
+			for (var i=0;i< domains[cat].length;i++){
+				li = document.createElement("li");
+				li.innerHTML = '<a href = "'+ domains[cat][i]["url"]+'">'+ domains[cat][i]["name"] +'</a>';
+				ul.appendChild(li);
+			}
+			guide.appendChild(ul);
+		};
+	});
+});
+
+</script>
 <%+footer%>
 
