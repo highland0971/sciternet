@@ -1,0 +1,392 @@
+#!/usr/bin/python
+
+#Main server code for sciternet network
+#TODO modifycation on master branch
+#TODO modified on branch demobranch
+
+
+import web
+#import MySQLdb
+import MySQLdb
+import hashlib
+import sys
+import os
+import datetime
+import json
+import socket
+import urllib
+import logging
+import time
+import subprocess
+
+DBPATH = '/var/www/router/ssdb.db3'
+GFWLISTPATH = '/var/www/router/static/gfwlist.list'
+urls = (
+	"/request_token/(.+)/(.+)","request_token",
+	"/request_router/(.+)","request_router",
+	"/request_gfwlist","request_gfwlist",
+	"/request_gfwlist/(.+)","request_gfwlistv2",
+	"/request_ss_clients/(.+)","request_ss_clients",
+	"/report_client_usage/(.+)/(.+)","update_client_usage",
+	"/update_check/(.+)/(\d+)","firmware_update_check",
+	"/get_client_usage/(.+)/","report_client_usage",
+	"/request_avail_server/(.+)","request_avail_proxy_server",
+	"/request_dynamic_router/(.+)/(.+)/(.+)","request_dynamic_proxy_server",
+)
+
+FIRMWARE_PATH = '/var/www/router/static/firmware'
+LOG_FILE="/var/log/ss_backend.log"
+
+PAGING_PORT = 63023
+PAGING_CMD_PORT = 8080
+
+
+#global logger
+#app = web.application(urls, globals())
+
+
+def get_client_accumulated_usage(user_id):
+	conn = get_connection()
+	logger = get_logger()
+	usage_by_month = 0
+	with conn:
+		c = conn.cursor(MySQLdb.cursors.DictCursor)
+		"""Sum usage by date for single user"""
+		sql = 'select sum(usage_gb)+sum(usage_mb)/1024  as usage_gb_sum from usage_trace where user_id = %s and audit_date between %s and %s'
+		startDay =  datetime.date(datetime.date.today().year,datetime.date.today().month,1).toordinal()
+		endDay = datetime.date(datetime.date.today().year if datetime.date.today().month < 12 else datetime.date.today().year + 1,1 if datetime.date.today().month == 12 else datetime.date.today().month+1,1).toordinal()
+		c.execute(sql,(user_id,startDay,endDay))
+		result = c.fetchone()
+		if result and result['usage_gb_sum']:
+			usage_by_month = result['usage_gb_sum']
+		else:
+			logger.debug('SQL with empty result:{}'.format(sql % (user_id,startDay,endDay)))
+
+	return usage_by_month
+
+
+def call_sub_server(target_server,cmd):
+        #udp = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+        #udp.sendto('HELLO',(target_server,PAGING_PORT))
+	count = 1
+        result = None
+        logger = get_logger()
+        url = 'http://{}:{}/{}'.format(target_server,PAGING_CMD_PORT,cmd)
+
+	try:
+		cmd = 'echo "PING"|nc -uq 1 {} {}'.format(target_server,PAGING_PORT)
+		logger.debug('Send command with {}'.format(cmd))
+		subprocess.check_call(cmd,shell = True)
+	except:
+		logger.exception('Failed to send udp packet to {}:{}'.format(target_server,PAGING_PORT))
+
+	while True and count <= 10 :
+		try:
+        		result = urllib.urlopen(url)
+			break
+		except IOError:
+			time.sleep(1)
+			logger.debug('Failed to fetch {}.'.format(url))
+		finally:
+			count += 1
+	if result:
+        	return json.load(result)
+	else:
+		return result
+
+
+class firmware_update_check:
+	def GET(self,model,ver):
+		if os.access('{}/{}'.format(FIRMWARE_PATH,model),os.F_OK):
+			candidates = os.listdir('{}/{}'.format(FIRMWARE_PATH,model))
+			vers = [int(ver) for ver in candidates]
+			vers.sort()
+			try:
+				return vers[vers.index(int(ver))+1]
+			except:
+				raise
+				pass
+		return ver
+
+class report_client_usage:
+	'''Report to client router'''
+	def GET(self,token):
+		conn = get_connection()
+		usage = [0 for i in range(31)]
+		jsoncallback = web.input()['jsoncallback']
+                with conn:
+                        c = conn.cursor(MySQLdb.cursors.DictCursor)
+			"""Sum usage by date for single user"""
+			sql = 'select sum(usage_gb)*1024 + sum(usage_mb) as usage_mb_sum ,audit_date from usage_trace join user_info using(user_id) where token = %s AND audit_date between %s AND %s  GROUP BY audit_date ORDER BY audit_date ASC'
+			startDay =  datetime.date(datetime.date.today().year,datetime.date.today().month,1).toordinal()
+			endDay = datetime.date(datetime.date.today().year if datetime.date.today().month < 12 else datetime.date.today().year + 1,1 if datetime.date.today().month == 12 else datetime.date.today().month+1,1).toordinal()
+			c.execute(sql,(token,startDay,endDay))
+			results = c.fetchall()
+			if results:
+				index = { i:0 for i in range(31) }
+				for result in results:
+					usage[datetime.date.fromordinal(result['audit_date']).day-1] = result['usage_mb_sum']
+		return "{}({})".format(jsoncallback,json.dumps(usage))
+
+#TODO FIX ME
+class update_client_usage:
+	def GET(self,port,usage):
+		sub_server = web.ctx.ip
+		audit_date = datetime.date.today().toordinal()
+		conn = get_connection()
+                with conn:
+			c = conn.cursor(MySQLdb.cursors.DictCursor)
+			user_id_sql = 'select user_id from router_dns where port = %s and router_ip = %s'
+                	c.execute(user_id_sql,(port,sub_server))
+                	uresult = c.fetchone()
+                	if not uresult:
+				#TODO dynamic proxy server may change it's ip or port before submit usage report
+                        	return 'SHUTDOWN'
+                	else:
+                        	user_id = uresult['user_id']
+                	sql = 'select * from usage_trace where user_id = %s and assigned_server = %s and audit_date = %s'
+			c.execute(sql,(user_id,sub_server,audit_date))
+			result = c.fetchall()
+			if result:
+				"""Update user usage withit the same day and server"""
+				if len(result) > 1 :
+					#TODO
+					#Remove unused records
+					pass
+				else:
+					sql = 'update usage_trace set usage_raw = %s, usage_gb = %s, usage_mb = %s where user_id = %s and audit_date = %s and assigned_server = %s'
+					usage_int = int(usage)
+					usage_raw = int(result[0]['usage_raw'])
+					if usage_int >= usage_raw:
+						delta_usage = usage_int-usage_raw
+					else:
+						delta_usage = usage_int
+					usage_mb = result[0]['usage_mb'] + delta_usage / 1048576.0
+					usage_gb = result[0]['usage_gb'] + usage_mb // 1024
+					usage_mb = usage_mb % 1024
+					c.execute(sql,(usage,usage_gb,usage_mb,user_id,audit_date,sub_server))
+			else:
+				"""Insert user audit result by different date or server"""
+				past_query = "select * from usage_trace where user_id = %s and assigned_server = %s order by audit_date DESC LIMIT 1"
+				c.execute(past_query,(user_id,sub_server))
+				result = c.fetchone()
+				if result:
+					"""Update user usage from most recent audit date"""
+					usage_int = int(usage)
+                                        usage_raw = int(result['usage_raw'])
+                                        if usage_int >= usage_raw:
+                                                delta_usage = usage_int-usage_raw
+					else:
+						"""if reported data vol smaller than last recored volume"""
+                                                delta_usage = usage_int
+					usage_mb = delta_usage / 1048576.0
+                                        usage_gb = usage_mb // 1024
+                                        usage_mb = usage_mb % 1024
+				else:
+					"""Insert new user usage audit records"""
+					usage_int = int(usage)
+					usage_mb = (usage_int % 1073741824) / 1048576.0
+					usage_gb = usage_int / 1073741824
+				sql = 'insert into usage_trace (user_id,audit_date,usage_gb,usage_mb,usage_raw,assigned_server) values (%s,%s,%s,%s,%s,%s)'
+				c.execute(sql,(user_id,audit_date,usage_gb,usage_mb,usage,sub_server))
+			conn.commit()
+		return '{}:{}@{}'.format(port,usage,web.ctx.ip)
+
+
+class request_ss_clients:
+	def GET(self,serverip):
+		clients = {}
+		if serverip == 'mine':
+			server_filter = web.ctx.ip	
+		else:
+			server_filter = serverip
+		conn = get_connection()
+                with conn:
+                        c = conn.cursor(MySQLdb.cursors.DictCursor)
+			query_sql = 'select port,alloc_type,cypher_method,token from router_dns join user_info using(user_id) join proxy_router_list using(router_ip) where router_ip = %s '
+			c.execute(query_sql ,[server_filter,])
+                        for records in c.fetchall():
+				clients[records['port']] = {'method':records['cypher_method'],'token':records['token'],'alloc_type':records['alloc_type']}
+		return json.dumps(clients)
+
+class request_token:
+	def GET(self,email,password):
+		auth_pass = False
+	        conn = get_connection()
+	        with conn:
+        	        c = conn.cursor(MySQLdb.cursors.DictCursor)
+			c.execute('select token,user_id from user_info where email = %s and password = %s',[email,password])
+			result = c.fetchone()
+			if result:
+				return result['token']
+			else:
+				return None
+		return None
+
+class request_gfwlist:
+	'''Not used anymore'''
+	#Replaced by request_gfwlistv2
+	def GET(self):
+		if os.access(GFWLISTPATH,os.R_OK):
+			with open(GFWLISTPATH) as fp:
+				return fp.read()
+		return None
+
+class request_gfwlistv2:
+	def GET(self,token):
+		try:
+			conn = get_connection()
+                	with conn:
+                        	c = conn.cursor(MySQLdb.cursors.DictCursor)
+                        	c.execute('select user_id from user_info where token = %s',[token,])
+                        	row = c.fetchone()
+                        	if not row:
+                                	return 'TOKEN_ERR'
+
+				if os.access(GFWLISTPATH,os.R_OK):
+                        		with open(GFWLISTPATH) as fp:
+						return fp.read()
+		except:
+                	return None
+
+class request_router:
+	'''Called from client router'''
+	def GET(self,token):
+		logger = get_logger()
+		conn = get_connection()
+        	with conn:
+                	c = conn.cursor(MySQLdb.cursors.DictCursor)
+			c.execute('select user_id from user_info where token = %s',[token,])
+			row = c.fetchone()
+			if not row:
+				return 'TOKEN_ERR'
+			else:
+				user_id = row['user_id']
+			used_data_vol = get_client_accumulated_usage(user_id)
+			query_sql = 'select router_ip,port,token,cypher_method from router_dns join proxy_router_list using(router_ip) join user_info using(user_id) where user_id = %s and ( user_info.expire_date = -1 or user_info.expire_date > %s ) and alloc_type = %s and credit_data_gb > %s'
+			c.execute(query_sql,(user_id, datetime.date.today().toordinal(),'STATIC',used_data_vol))
+			for record in c.fetchall():
+				return 'ip:{} port:{} method:{}'.format(record['router_ip'],record['port'],record['cypher_method'])
+			else:
+				logger.debug('Fetch empty with SQL:{}'.format(query_sql % (user_id, datetime.date.today().toordinal(),'STATIC',used_data_vol)))
+		return 'ROUTER_NA'
+
+class request_dynamic_proxy_server:
+	def GET(self,token,propose,mac):
+		return_result = 'ROUTER_NA'
+		logger = get_logger()
+		conn = get_connection()
+		with conn:
+                        c = conn.cursor(MySQLdb.cursors.DictCursor)
+                        c.execute('select user_id,expire_date,credit_data_gb,server_type from user_info where token = %s',[token,])
+                        row = c.fetchone()
+                        if not row:
+                                return 'TOKEN_ERR'
+			elif row['expire_date'] < datetime.date.today().toordinal() :
+				return 'EXPIRED'
+			elif row['credit_data_gb'] < get_client_accumulated_usage(row['user_id']):
+				return 'OUT_OF_CREDIT'
+			else:
+                                user_id = row['user_id']
+				assign_server_type = row['server_type']
+			
+			if assign_server_type == 'dedicated':
+				try:
+					c.execute('select router_ip,cypher_method,port from router_dns join proxy_router_list using(router_ip) where user_id = %s and alloc_type = %s',[user_id,'STATIC'])
+					row = c.fetchone()
+					if row:
+						return_result = 'ip:{} port:{} method:{}'.format(row['router_ip'],row['port'],row['cypher_method'])
+					else:
+						return_result = 'ROUTER_NA'
+				except:
+					logger.exception('Unexpected error occured.')
+					return_result = 'ROUTER_NA'
+			elif assign_server_type == 'shared':
+				if propose:
+					try:
+						#selected = sorted(propose,key = lambda d:d[1])[0]
+						selected = propose
+						c.execute('select router_ip,cypher_method,port from router_dns join proxy_router_list using(router_ip) where user_id = %s and router_ip = %s',[user_id,selected])
+						row = c.fetchone()
+						if row:
+							return_result = 'ip:{} port:{} method:{}'.format(row['router_ip'],row['port'],row['cypher_method'])
+						else:
+							free_ports = call_sub_server(selected,'report_avail_port')
+							if free_ports:
+								c.execute('select router_ip,port from router_dns where user_id = %s and alloc_type = %s',[user_id,'DYNAMIC'])
+								row = c.fetchall()
+								if row:
+									#TODO port change for exist dynamic port allocation
+									if len(row) > 1:
+										#TODO to be discussed yet
+										logger.error('More than one row fetched')
+									else:
+										update_sql = 'UPDATE router_dns set router_ip = %s,port = %s,mac = %s where user_id = %s and alloc_type = %s'
+										c.execute(update_sql,[selected,free_ports[0],mac,user_id,'DYNAMIC'])
+										conn.commit()
+								else:
+									#For new user client access
+									insert_query = 'INSERT INTO router_dns (user_id,router_ip,port,client_mac,alloc_type) VALUES(%s,%s,%s,%s,%s)'
+									c.execute(insert_query,[user_id,selected,free_ports[0],mac,'DYNAMIC'])
+									conn.commit()
+								
+								call_sub_server(selected,'sync_clients')
+								query_cypher_method = 'select cypher_method from proxy_router_list where router_ip = %s'
+								c.execute(query_cypher_method,selected)
+								method = c.fetchone()['cypher_method']
+								return_result = 'ip:{} port:{} method:{}'.format(selected,ports[0],method)
+					except IOError,e:
+						logger.exception('Failed to get avail port from selected server {}.'.format(selected))
+					except:
+						logger.exception('Unexpected error occured during alloc dynamic proxy server.')
+			else:
+				return_result = 'ROUTER_NA'
+		return return_result
+
+class request_avail_proxy_server:
+	'''For client router to get test target'''
+	def GET(self,token):
+		server = []
+                conn = get_connection()
+                with conn:
+                        c = conn.cursor(MySQLdb.cursors.DictCursor)
+                        c.execute('select user_id,server_type from user_info where token = %s',[token,])
+                        row = c.fetchone()
+                        if not row:
+                                return 'TOKEN_ERR'
+                        else:
+                                user_id = row['user_id']
+				server_type = row['server_type']
+			if server_type == 'dedicated':
+				query_sql = 'select router_ip from proxy_router_list where expire_date > %s and credit_datavol_gb > consumed_datavol_gb and allocated_user_id = %s'
+				c.execute(query_sql,(datetime.date.today().toordinal(),user_id))
+                        else:
+                                query_sql = 'select router_ip from proxy_router_list where expire_date > %s and credit_datavol_gb > consumed_datavol_gb and server_type = %s'
+                                c.execute(query_sql,(datetime.date.today().toordinal(),server_type))
+			result = c.fetchall()
+			for row in result:
+				server.append(row['router_ip'])
+			#return json.dumps(server)
+			return ','.join([str(a) for a in server ])
+
+
+
+def get_connection():
+	return MySQLdb.connect("104.129.0.243","root","sciternet","sciternet")
+
+def get_logger():
+	logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',filename=LOG_FILE,level=logging.DEBUG)
+	return logging.getLogger('ss_sync')
+
+
+global logger
+web.wsgi.runwsgi = lambda func, addr=None: web.wsgi.runfcgi(func, addr)
+app = web.application(urls, globals())
+
+
+if __name__ == "__main__":
+	logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',filename=LOG_FILE,level=logging.DEBUG)
+        logger = logging.getLogger('ss_sync')
+
+	app.run()
+
