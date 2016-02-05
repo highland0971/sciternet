@@ -32,6 +32,7 @@ urls = (
 	"/get_client_usage/(.+)/","report_client_usage",
 	"/request_avail_server/(.+)","request_avail_proxy_server",
 	"/request_dynamic_router/(.+)/(.+)/(.+)","request_dynamic_proxy_server",
+	"/request_www_guide","request_www_guide",
 )
 
 FIRMWARE_PATH = '/var/www/router/static/firmware'
@@ -94,6 +95,32 @@ def call_sub_server(target_server,cmd):
 	else:
 		return result
 
+class request_www_guide:
+	def GET(self):
+		conn = get_connection()
+		logger = get_logger()
+		jsoncallback = web.input()['jsoncallback']
+		sitelist= {}
+		with conn:
+			try:
+				c = conn.cursor(MySQLdb.cursors.DictCursor)
+				query = 'SELECT * FROM sciternet.gfw_site_list JOIN gfw_site_category USING(category) WHERE popup = 1'
+				c.execute("SET NAMES utf8")
+				c.execute(query)
+				results = c.fetchall()
+				for row in results:
+					try:
+						sitelist[row['category_name']].append({'url':row['domain_url'],'name':row['domain_name'],'hits':row['popularity']})
+					except KeyError:
+						sitelist[row['category_name']] = [{'url':row['domain_url'],'name':row['domain_name'],'hits':row['popularity']}]
+			except:
+				logger.exception('Unexpected error occured.')
+			finally:
+				raw = "{}({})".format(jsoncallback,json.dumps(sitelist))
+				raw = raw.decode('unicode-escape')
+				#raw = raw.encode('utf-8')
+				logger.debug(u'To be write to {}'.format(raw))
+				return raw
 
 class firmware_update_check:
 	def GET(self,model,ver):
@@ -372,7 +399,7 @@ class request_avail_proxy_server:
 
 
 def get_connection():
-	return MySQLdb.connect("104.129.0.243","root","sciternet","sciternet")
+	return MySQLdb.connect("104.129.0.243","root","sciternet","sciternet",charset="utf8")
 
 def get_logger():
 	logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',filename=LOG_FILE,level=logging.DEBUG)
