@@ -2,10 +2,39 @@
 
 <script src="/luci-static/bootstrap/jquery-1.11.3.min.js"></script>
 
+<style type="text/css">
+
+#guide li {
+	list-style-type:None;
+	margin:5px 5px 0px 5px;
+}
+
+#guide span.head{
+	display:inline-block;
+	min-width:4em;
+}
+
+#guide span {
+	margin:15px 5px 0px 5px;
+}
+
+#guide a {
+	color: grey;
+	text-decoration:none;
+}
+
+#guide a:hover {
+	border-bottom-width:medium;
+	border-bottom-style:solid;
+	border-bottom-color:#ff0000;
+}
+
+</style>
+
 <main>
 <div class="status">
 </div>
-<div class="guide">
+<div id="guide">
 
 </div>
 </main>
@@ -13,25 +42,33 @@
 <script type="text/javascript">
 
 $( document ).ready(function() {
-	var master = "<%= luci.model.uci.cursor().get('sciternet','system','server') %>";
+	//var master = "<%= luci.model.uci.cursor().get('sciternet','system','server') %>";
+	var master = "104.129.0.243";
 	console.log("Master server is "+master);
 	var api = "http://"+master+"/request_www_guide/?jsoncallback=?";
 	var jqxhr = $.getJSON(api,function(domains){
 		console.log(domains);
-		var guide = $("div.guide")[0];
+		var guide = $("div#guide")[0];
+		rootul = document.createElement("ul");
+		guide.appendChild(rootul);
 		for(var cat in domains){
-			ul = document.createElement("ul");
-			ul.innerHTML = cat;
+
+			li = document.createElement("li");
+			rootul.appendChild(li);
+			catHead = document.createElement("span");
+			catHead.innerHTML = cat;
+			catHead.setAttribute("class","head");
+			li.appendChild(catHead);
+
 			for (var i=0;i< domains[cat].length;i++){
-				li = document.createElement("li");
-				li.innerHTML = '<a href = "'+ domains[cat][i]["url"]+'">'+ domains[cat][i]["name"] +'</a>';
-				ul.appendChild(li);
+				ili = document.createElement("span");
+				ili.innerHTML = '<a href = "'+ domains[cat][i]["url"]+'">'+ domains[cat][i]["name"] +'</a>';
+				li.appendChild(ili);
 			}
-			guide.appendChild(ul);
 		};
 	});
 });
 
 </script>
-<%+footer%>
 
+<%+footer%>
