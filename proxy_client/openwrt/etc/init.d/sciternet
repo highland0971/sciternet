@@ -30,7 +30,7 @@ start() {
                 echo $0 $(date) "Starting service complete." >> $LOG
         else
                 echo $0 $(date) "Service has been disabled,starting abort..." >> $LOG
-                stop
+                #stop
         fi
 }
 

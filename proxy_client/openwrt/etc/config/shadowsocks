@@ -1,0 +1,23 @@
+
+config global
+	option global_server 'cfg084a8f'
+
+config udp_forward
+	option tunnel_enable '0'
+	option tunnel_port '5300'
+	option tunnel_forward '8.8.4.4:53'
+
+config access_control
+	option lan_ac_mode '0'
+	option wan_bp_list '/etc/ignore.list'
+
+config servers
+	option auth_enable '0'
+	option local_port '1080'
+	option timeout '60'
+	option encrypt_method 'rc4-md5'
+	option server '75.75.242.42'
+	option server_port '8389'
+	option password 'gxxuessme'
+	option alias 'default'
+

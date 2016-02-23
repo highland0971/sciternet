@@ -37,13 +37,20 @@ function index()
 end
 
 function _start_service()
+--[[
 	luci.sys.call("/etc/init.d/sciternet stop")
 	luci.sys.call("/etc/init.d/sciternet start")
+]]--
+	luci.sys.call("/usr/bin/sciternet_sync.sh stop")
+	luci.sys.call("/usr/bin/sciternet_sync.sh start")
 	luci.http.write_json("OK")
 end
 
 function _stop_service()
+--[[
         luci.sys.call("/etc/init.d/sciternet stop")
+]]--
+	luci.sys.call("/usr/bin/sciternet_sync.sh stop")
         luci.http.write_json("OK")
 end
 

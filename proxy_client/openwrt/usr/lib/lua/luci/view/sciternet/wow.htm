@@ -4,22 +4,32 @@
 
 <style type="text/css">
 
+#status{
+	padding-left:2em;
+	padding-bottom:1em;
+	font-weight:bold;
+}
+
 #guide li {
 	list-style-type:None;
 	margin:5px 5px 0px 5px;
+	color:black;
 }
 
 #guide span.head{
 	display:inline-block;
 	min-width:4em;
+	font-weight:bold;
+	border-right-style:solid;
+	border-right-color:red;
+	padding-right:1em;
 }
 
 #guide span {
-	margin:15px 5px 0px 5px;
+	margin:5px 5px 0px 5px;
 }
 
 #guide a {
-	color: grey;
 	text-decoration:none;
 }
 
@@ -32,7 +42,7 @@
 </style>
 
 <main>
-<div class="status">
+<div id="status">
 </div>
 <div id="guide">
 
@@ -41,8 +51,25 @@
 
 <script type="text/javascript">
 
+function monitor_service_status()
+{
+        console.log("watch dog tick");
+        watchDogUrl = "<%= luci.dispatcher.build_url('admin/services/sciternet/service_watch_dog') %>";
+        $.getJSON(watchDogUrl,function(result){
+                var descriptor = $("div#status")[0];
+                descriptor.innerHTML = result;
+        });
+        setTimeout("monitor_service_status()",5000);
+
+}
+
+
 $( document ).ready(function() {
-	//var master = "<%= luci.model.uci.cursor().get('sciternet','system','server') %>";
+
+	console.log( "Sciternet guide loading" );
+        monitor_service_status();
+
+	var master = "<%= luci.model.uci.cursor().get('sciternet','system','server') %>";
 	var master = "104.129.0.243";
 	console.log("Master server is "+master);
 	var api = "http://"+master+"/request_www_guide/?jsoncallback=?";
@@ -62,12 +89,14 @@ $( document ).ready(function() {
 
 			for (var i=0;i< domains[cat].length;i++){
 				ili = document.createElement("span");
-				ili.innerHTML = '<a href = "'+ domains[cat][i]["url"]+'">'+ domains[cat][i]["name"] +'</a>';
+				ili.innerHTML = '<a target = "_balnk" href = "'+ domains[cat][i]["url"]+'">'+ domains[cat][i]["name"] +'</a>';
 				li.appendChild(ili);
 			}
 		};
 	});
 });
+
+
 
 </script>
 

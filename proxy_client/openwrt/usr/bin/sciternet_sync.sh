@@ -115,21 +115,29 @@ startv2phs2()
         log "Config shadowsocks..."
 
         if [ -s $CN_LIST ]; then
-                uci set shadowsocks.@shadowsocks[0].ignore_list=$CN_LIST
+                uci set shadowsocks.@access_control[0].wan_bp_list=$CN_LIST
         else
                 startResult="ALL_ROUTED"
         fi
 
         if [ -n "$server_ip" ]; then
                 log "configuring shadowsocks to $server_ip:$server_port by $encrypt_method"
-                uci set shadowsocks.@shadowsocks[0].server=$server_ip
-                uci set shadowsocks.@shadowsocks[0].server_port=$server_port
-                uci set shadowsocks.@shadowsocks[0].encrypt_method=$encrypt_method
-                uci set shadowsocks.@shadowsocks[0].password=$TOKEN
-                uci set shadowsocks.@shadowsocks[0].enable=$(uci get sciternet.system.auto_start)
-                uci set shadowsocks.@shadowsocks[0].lan_ac_mode=0
-                uci set shadowsocks.@shadowsocks[0].tunnel_enable=0
-                uci set shadowsocks.@shadowsocks[0].udp_mode=0
+                uci set shadowsocks.@servers[0].server=$server_ip
+                uci set shadowsocks.@servers[0].server_port=$server_port
+                uci set shadowsocks.@servers[0].encrypt_method=$encrypt_method
+                uci set shadowsocks.@servers[0].password=$TOKEN
+		uci set shadowsocks.@servers[0].auth_enable='0'
+		uci set shadowsocks.@servers[0].local_port='1080'
+		uci set shadowsocks.@servers[0].timeout='60'
+		uci set shadowsocks.@servers[0].alias='default'
+
+		uci set shadowsocks.@udp_forward[0].tunnel_enable='0'
+
+		uci set shadowsocks.@global[0].global_server=$(uci show shadowsocks.@servers[0].server|awk -F. '{print $2}')
+	else
+		uci set shadowsocks.@global[0].global_server='nil'
+		log "Disable shadowsocks due to no valid ss server"
+		
         fi
 
         uci commit shadowsocks
