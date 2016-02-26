@@ -1,12 +1,7 @@
 #!/usr/bin/python
 
-#Main server code for sciternet network
-#TODO modifycation on master branch
-#TODO modified on branch demobranch
-
 
 import web
-#import MySQLdb
 import MySQLdb
 import hashlib
 import sys
@@ -29,6 +24,7 @@ urls = (
 	"/request_ss_clients/(.+)","request_ss_clients",
 	"/report_client_usage/(.+)/(.+)","update_client_usage",
 	"/update_check/(.+)/(\d+)","firmware_update_check",
+	"/update_firmware_url/(.+)/(\d+)","firmware_update_url",
 	"/get_client_usage/(.+)/","report_client_usage",
 	"/request_avail_server/(.+)","request_avail_proxy_server",
 	"/request_dynamic_router/(.+)/(.+)/(.+)","request_dynamic_proxy_server",
@@ -126,14 +122,22 @@ class firmware_update_check:
 	def GET(self,model,ver):
 		if os.access('{}/{}'.format(FIRMWARE_PATH,model),os.F_OK):
 			candidates = os.listdir('{}/{}'.format(FIRMWARE_PATH,model))
-			vers = [int(ver) for ver in candidates]
-			vers.sort()
-			try:
-				return vers[vers.index(int(ver))+1]
-			except:
-				raise
-				pass
-		return ver
+			vers = [int(iver) for iver in candidates]
+			if vers:
+				vers.sort()
+				if vers[-1] > int(ver):
+					return vers[-1]
+		return ''
+
+class firmware_update_url:
+	def GET(self,model,ver):
+		fc = firmware_update_check()
+		next_ver = fc.GET(model,ver)
+		if next_ver:
+			candidates = os.listdir('{}/{}/{}'.format(FIRMWARE_PATH,model,next_ver))
+			if candidates:
+				return '{}/static/firmware/{}/{}/{}'.format(web.ctx.homedomain,model,next_ver,candidates[0])
+		return ''
 
 class report_client_usage:
 	'''Report to client router'''

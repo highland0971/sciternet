@@ -1,0 +1,31 @@
+<script src="/luci-static/bootstrap/jquery-1.11.3.min.js"></script>
+<link rel="stylesheet" href="/luci-static/bootstrap/cascade.css">
+
+<div class="cbi-value" id="cbi-sciternet-ui-bt-service-action">
+        <label class="cbi-value-title" for="cbid.sciternet.ui.service_switch_bt"></label>
+                <div class="cbi-value-field">
+			<a type="button" class="cbi-button cbi-input-reset .btn.disabled" target="_balnk" id="firmware_url">Download Not Available</a>
+			<a type="button" class="cbi-button cbi-button-link" href="../system/flashops">Turn to upgrade page</a>
+		</div>
+
+</div>
+
+<script type="text/javascript">
+
+$( document ).ready(function() {
+        console.log( "Upgrade download page loaded" );
+	Url = "<%= luci.dispatcher.build_url('admin/services/sciternet/get_firmware_link') %>";
+	$.getJSON(Url,function(result){
+		console.log("Upgrade firmware got " + result);
+		var reg = new RegExp("(http://)|(https://)";
+		if(reg.test(result)){
+			var a = $("#firmware_url")[0];
+			a.setAttribute("href",result);
+			a.setAttribute("class","cbi-button cbi-input-download");
+			a.innerHTML = "Download Firmware";
+		}
+	});
+});
+
+</script>
+

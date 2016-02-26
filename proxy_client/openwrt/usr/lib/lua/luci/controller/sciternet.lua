@@ -2,7 +2,11 @@
 openwrt-dist-luci: SciTernet
 ]]--
 
+local MAIN_SCRIPT = "/usr/bin/sciternet_sync.sh"                                             
+local RESULT_FILE='/tmp/sciternet.status'
+
 fs = require("nixio.fs")
+sys = require("luci.sys")
 
 module("luci.controller.sciternet", package.seeall)
 
@@ -33,23 +37,26 @@ function index()
 	entry({"admin", "services", "sciternet","service_watch_dog"},call("_report_service_status")).dependent = false
 	entry({"admin", "services", "sciternet","stop_service"},call("_stop_service")).dependent = false
 	entry({"admin", "services", "sciternet","start_service"},call("_start_service")).dependent = false
+	entry({"admin", "services", "sciternet","get_firmware_link"},call("_get_firmware_link")).dependent = false
 
 end
 
+function _get_firmware_link()
+	link = luci.sys.exec(MAIN_SCRIPT.." upgrade_url")
+	if #link>0 then
+		luci.http.write_json(link)
+	else
+		luci.http.write_json("./#")
+	end
+end
+
 function _start_service()
---[[
-	luci.sys.call("/etc/init.d/sciternet stop")
-	luci.sys.call("/etc/init.d/sciternet start")
-]]--
 	luci.sys.call("/usr/bin/sciternet_sync.sh stop")
 	luci.sys.call("/usr/bin/sciternet_sync.sh start")
 	luci.http.write_json("OK")
 end
 
 function _stop_service()
---[[
-        luci.sys.call("/etc/init.d/sciternet stop")
-]]--
 	luci.sys.call("/usr/bin/sciternet_sync.sh stop")
         luci.http.write_json("OK")
 end

@@ -123,8 +123,11 @@ end
 fs.writefile("/tmp/debug.load","Section upgrade option target version create complete")
 
 
-o = s:taboption("upgrade",Flag, "auto_upgrade",translate("Auto upgrade enable"))
-o.default = 1
+-- o = s:taboption("upgrade",Flag, "auto_upgrade",translate("Auto upgrade enable"))
+-- o.default = 1
+
+o = s:taboption("upgrade", Value, 'download_firmware')
+o.template = "sciternet/upgrade_link"
 
 fs.writefile("/tmp/debug.load","Section upgrade create complete")
 
