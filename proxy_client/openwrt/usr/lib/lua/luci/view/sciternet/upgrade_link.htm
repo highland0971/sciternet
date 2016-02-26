@@ -17,7 +17,7 @@ $( document ).ready(function() {
 	Url = "<%= luci.dispatcher.build_url('admin/services/sciternet/get_firmware_link') %>";
 	$.getJSON(Url,function(result){
 		console.log("Upgrade firmware got " + result);
-		var reg = new RegExp("(http://)|(https://)";
+		var reg = new RegExp("(http://)|(https://)");
 		if(reg.test(result)){
 			var a = $("#firmware_url")[0];
 			a.setAttribute("href",result);

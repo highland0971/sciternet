@@ -90,14 +90,24 @@ o = s:taboption("account",Value, "service_switch")
 o.template = "sciternet/service_switch"
 
 
-
 s:tab("run",translate("Basic setting"))
 o = s:taboption("run",Flag, "auto_start", translate("Auto start on boot"))
 o.default = true
 o.rmempty = false
 
-s:tab("upgrade",translate("Upgrade setting"))
+newest_ver = tonumber(luci.sys.exec(MAIN_SCRIPT.." new_ver_check"))
+
+fs.writefile("/tmp/debug.load","Section upgrade option target version query complete")       
+
+
+if newest_ver == nil then 
+	s:tab("upgrade",translate("Upgrade"))
+else
+	s:tab("upgrade",translate("Upgrade(New!)"))
+end
+
 cur_ver = luci.sys.exec(MAIN_SCRIPT.." ver")
+
 o = s:taboption("upgrade",ListValue, "", translate("Current version"))
 o:value(cur_ver, cur_ver)
 function o.validate(self,value)
@@ -111,17 +121,14 @@ function o.validate(self,value)
         return value
 end
 
-newest_ver = luci.sys.exec(MAIN_SCRIPT.." new_ver_check")
-fs.writefile("/tmp/debug.load","Section upgrade option target version query complete")
 
-if #newest_ver >0 then
-        o:value(newest_ver, newest_ver)
+if newest_ver == nil then
+	o:value("NA", translate("Not available"))       
 else
-        o:value("NA", translate("Not available"))
+	o:value(newest_ver, newest_ver)                                   
 end
 
 fs.writefile("/tmp/debug.load","Section upgrade option target version create complete")
-
 
 -- o = s:taboption("upgrade",Flag, "auto_upgrade",translate("Auto upgrade enable"))
 -- o.default = 1
