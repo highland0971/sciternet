@@ -100,7 +100,7 @@ class request_www_guide:
 		with conn:
 			try:
 				c = conn.cursor(MySQLdb.cursors.DictCursor)
-				query = 'SELECT * FROM sciternet.gfw_site_list JOIN gfw_site_category USING(category) WHERE popup = 1'
+				query = 'SELECT * FROM sciternet.gfw_site_list JOIN gfw_site_category USING(category) WHERE popup = 1 ORDER BY popularity DESC'
 				c.execute("SET NAMES utf8")
 				c.execute(query)
 				results = c.fetchall()
