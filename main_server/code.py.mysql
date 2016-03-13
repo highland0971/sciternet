@@ -34,7 +34,9 @@ urls = (
 FIRMWARE_PATH = '/var/www/router/static/firmware'
 LOG_FILE="/var/log/ss_backend.log"
 
-PAGING_PORT = 63023
+#PAGING_PORT = 63023
+PAGING_PORT = 60323
+
 PAGING_CMD_PORT = 8080
 
 
@@ -337,6 +339,7 @@ class request_dynamic_proxy_server:
 					try:
 						#selected = sorted(propose,key = lambda d:d[1])[0]
 						selected = propose
+						logger.debug('select router_ip,cypher_method,port from router_dns join proxy_router_list using(router_ip) where user_id = {} and router_ip = {}'.format(user_id,selected))
 						c.execute('select router_ip,cypher_method,port from router_dns join proxy_router_list using(router_ip) where user_id = %s and router_ip = %s',[user_id,selected])
 						row = c.fetchone()
 						if row:

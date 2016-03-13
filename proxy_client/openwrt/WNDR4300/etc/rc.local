@@ -1,0 +1,17 @@
+# Put your custom commands here that should be executed once
+# the system init finished. By default this file does nothing.
+
+
+while [ "1" = "1" ]
+do
+	nslookup ftp.apnic.net && break
+	sleep 1
+done
+
+domain="myrouter.net"
+sed -i /$domain/d /etc/hosts && echo $(ifconfig br-lan | grep 'inet addr'|awk '{print $2}'|awk -F ':' '{print $2}') $domain >> /etc/hosts
+domain="www.routerlogin.com"
+sed -i /$domain/d /etc/hosts && echo $(ifconfig br-lan | grep 'inet addr'|awk '{print $2}'|awk -F ':' '{print $2}') $domain >> /etc/hosts
+
+
+exit 0
