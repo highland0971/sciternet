@@ -430,7 +430,7 @@ def service_start_helper():
 				except ConfigParser.NoOptionError:
 					#path = '/proc/kmsg'
 					#cmd = "cat {}".format(path)
-					logger.error('Failed to locate logreadcmd config in {}.'format(CONFIG_FILE))
+					logger.error('Failed to locate logreadcmd config in {}.'.format(CONFIG_FILE))
 					sys.exit(2)
 				cmd +=  """ | awk '/PORT REQUEST/{for(i=1;i<=NF;i++) if ($i~/DPT=[0-9]*/) system("/usr/local/bin/ss_sync.py --" $i)} /PAGING_REQUEST/{system("/usr/local/bin/ss_sync.py --paging")}' &"""
 				logger.debug(cmd)
