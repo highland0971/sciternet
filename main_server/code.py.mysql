@@ -382,26 +382,32 @@ class request_avail_proxy_server:
 	def GET(self,token):
 		server = []
                 conn = get_connection()
+		logger = get_logger()
                 with conn:
-                        c = conn.cursor(MySQLdb.cursors.DictCursor)
-                        c.execute('select user_id,server_type from user_info where token = %s',[token,])
-                        row = c.fetchone()
-                        if not row:
-                                return 'TOKEN_ERR'
-                        else:
-                                user_id = row['user_id']
-				server_type = row['server_type']
-			if server_type == 'dedicated':
-				query_sql = 'select router_ip from proxy_router_list where expire_date > %s and credit_datavol_gb > consumed_datavol_gb and allocated_user_id = %s'
-				c.execute(query_sql,(datetime.date.today().toordinal(),user_id))
-                        else:
-                                query_sql = 'select router_ip from proxy_router_list where expire_date > %s and credit_datavol_gb > consumed_datavol_gb and server_type = %s'
-                                c.execute(query_sql,(datetime.date.today().toordinal(),server_type))
-			result = c.fetchall()
-			for row in result:
-				server.append(row['router_ip'])
-			#return json.dumps(server)
-			return ','.join([str(a) for a in server ])
+			try:
+				logger.debug('request_avail_proxy_server by token {}'.format(token))
+                        	c = conn.cursor(MySQLdb.cursors.DictCursor)
+                        	c.execute('select user_id,server_type from user_info where token = %s',[token,])
+                        	row = c.fetchone()
+                        	if not row:
+                                	return 'TOKEN_ERR'
+                        	else:
+                                	user_id = row['user_id']
+					server_type = row['server_type']
+				if server_type == 'dedicated':
+					query_sql = 'select router_ip from proxy_router_list where expire_date > %s and credit_datavol_gb > consumed_datavol_gb and allocated_user_id = %s'
+					c.execute(query_sql,(datetime.date.today().toordinal(),user_id))
+                        	else:
+                                	query_sql = 'select router_ip from proxy_router_list where expire_date > %s and credit_datavol_gb > consumed_datavol_gb and server_type = %s'
+                                	c.execute(query_sql,(datetime.date.today().toordinal(),server_type))
+				result = c.fetchall()
+				for row in result:
+					server.append(row['router_ip'])
+				#return json.dumps(server)
+				return ','.join([str(a) for a in server ])
+			except:
+				logger.exception("Unexpected error occured during request_avail_proxy_server.")
+				return 'ERROR'
 
 
 

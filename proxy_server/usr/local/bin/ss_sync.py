@@ -420,15 +420,18 @@ def service_start_helper():
 			try:
 				logger.debug('Try setup watch dog for client proxy request')
 				try:
-					path = config.get('LocalServer','watchdogpath')
-					cmd = "tail -f {}".format(path)
-					fp = open(path,'wb')
-					fp.write('Started on {}'.format(time.time()))
-					fp.close()
-					subprocess.check_call('chown syslog:adm {}'.format(path),shell=True)
+					#path = config.get('LocalServer','watchdogpath')
+					#cmd = "tail -f {}".format(path)
+					#fp = open(path,'wb')
+					#fp.write('Started on {}'.format(time.time()))
+					#fp.close()
+					#subprocess.check_call('chown syslog:adm {}'.format(path),shell=True)
+					cmd = config.get('LocalServer','logreadcmd')
 				except ConfigParser.NoOptionError:
-					path = '/proc/kmsg'
-					cmd = "cat {}".format(path)
+					#path = '/proc/kmsg'
+					#cmd = "cat {}".format(path)
+					logger.error('Failed to locate logreadcmd config in {}.'format(CONFIG_FILE))
+					sys.exit(2)
 				cmd +=  """ | awk '/PORT REQUEST/{for(i=1;i<=NF;i++) if ($i~/DPT=[0-9]*/) system("/usr/local/bin/ss_sync.py --" $i)} /PAGING_REQUEST/{system("/usr/local/bin/ss_sync.py --paging")}' &"""
 				logger.debug(cmd)
 				subprocess.check_call(cmd,shell=True)
