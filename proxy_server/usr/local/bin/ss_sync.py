@@ -447,6 +447,8 @@ def service_start_helper():
 		except subprocess.CalledProcessError as error:
 			logger.exception('Shadowsocks master deamon start failed,with return code {}'.format(error.returncode))
 			sys.exit(2)
+		except:
+			logger.exception("Unexpected error happened during service_start_helper.")
 	else:
 		logger.error('Failed to get local public ip address,server start aborted')
 		sys.exit(2)
