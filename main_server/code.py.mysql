@@ -81,6 +81,7 @@ def call_sub_server(target_server,cmd):
 
 	while True and count <= 10 :
 		try:
+			logger.debug("Try fetch {}".format(url))
         		result = urllib.urlopen(url)
 			break
 		except IOError:
@@ -355,7 +356,7 @@ class request_dynamic_proxy_server:
 										#TODO to be discussed yet
 										logger.error('More than one row fetched')
 									else:
-										update_sql = 'UPDATE router_dns set router_ip = %s,port = %s,mac = %s where user_id = %s and alloc_type = %s'
+										update_sql = 'UPDATE router_dns set router_ip = %s,port = %s,client_mac = %s where user_id = %s and alloc_type = %s'
 										c.execute(update_sql,[selected,free_ports[0],mac,user_id,'DYNAMIC'])
 										conn.commit()
 								else:
@@ -366,9 +367,11 @@ class request_dynamic_proxy_server:
 								
 								call_sub_server(selected,'sync_clients')
 								query_cypher_method = 'select cypher_method from proxy_router_list where router_ip = %s'
-								c.execute(query_cypher_method,selected)
+								c.execute(query_cypher_method,[selected,])
 								method = c.fetchone()['cypher_method']
-								return_result = 'ip:{} port:{} method:{}'.format(selected,ports[0],method)
+								return_result = 'ip:{} port:{} method:{}'.format(selected,free_ports[0],method)
+							else:
+								logger.error("No avail free port reported from peer {}".format(selected))
 					except IOError,e:
 						logger.exception('Failed to get avail port from selected server {}.'.format(selected))
 					except:
