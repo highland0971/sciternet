@@ -1,7 +1,7 @@
 #!/bin/sh
 
 MODEL=$(cat /proc/cpuinfo |grep machine|awk '{print $4}')
-VER=736019
+VER=736047
 
 
 MASTER_SRV=$(uci get sciternet.system.server)
@@ -13,7 +13,8 @@ LOG='/var/log/sciternet.log'
 UPDATE_SCRIPT='/tmp/sciternet.update'
 RESULT_FILE='/tmp/sciternet.status'
 touch $LOG
-WAN_NAME=$(route|grep default|awk '{print $NF}')
+#WAN_NAME=$(route|grep default|awk '{print $NF}')
+WAN_NAME='br-lan'
 MAC=$(ifconfig|grep $WAN_NAME|awk '{print $NF}'|awk -F: 'BEGIN{a=""}{for(i=1;i<=NF;i++) a = a $i ;print a}')
 
 
@@ -108,7 +109,8 @@ startv2phs2()
         if [ -s $CN_LIST ] && [ "$1" != "fresh_cnlist" ]; then
                 log "APNIC CHINA IP list found in /etc,download escaped."
         else
-                wget -t 10 --read-timeout 600 -O- 'http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $4, 32-log($5)/log(2)) }' > $CN_LIST
+		wget -t 10 --read-timeout 600 -O- http://$MASTER_SRV/static/apnic.list | awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $4, 32-log($5)/log(2)) }' > $CN_LIST
+                #wget -t 10 --read-timeout 600 -O- 'http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest' | awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $4, 32-log($5)/log(2)) }' > $CN_LIST
 		log "Complete."
         fi
 
