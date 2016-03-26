@@ -14,3 +14,5 @@ libraryDependencies ++= Seq(
   "mysql" % "mysql-connector-java" % "5.1.38",
   "org.hibernate" % "hibernate-entitymanager" % "5.1.0.Final"
 )
+
+PlayKeys.externalizeResources := false

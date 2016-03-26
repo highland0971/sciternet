@@ -1,0 +1,80 @@
+@import model.UserLogin
+
+@(identityForm:Form[UserLogin],isLogin:Boolean = false)
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+            <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <link rel="icon" href="@routes.Assets.versioned("images/favicon.png")">
+
+        <title>Sciternet</title>
+
+            <!-- Bootstrap core CSS -->
+
+        <!-- On deployment
+        <link href="//cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+        -->
+        <link href="@routes.Assets.versioned("stylesheets/bootstrap.min.css")" rel="stylesheet">
+
+            <!-- jQuery文件。务必在bootstrap.min.js 之前引入 -->
+        <script src="//cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
+
+            <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+        <script src="@routes.Assets.versioned("javascripts/bootstrap.min.js")"></script>
+
+            <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+            <!--[if lt IE 9]>
+      <script src="//cdn.bootcss.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="//cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    </head>
+
+    <body>
+
+        <nav class="navbar navbar-inverse navbar-fixed-top">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">科学网络</a>
+                </div>
+                <div id="navbar" class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-collapse collapse">
+                        @if(isLogin) {
+                            <li class="active"><a href="#">我的网络</a></li>
+                            <li><a href="#about">升级计划</a></li>
+                        }
+                            <li><a href="#firmware">固件下载</a></li>
+                            <li><a href="#contact">关于</a></li>
+                    </ul>
+
+
+                    @helper.form(action = routes.HomeController.login(),'id->"identityForm",'class->"navbar-form navbar-right"){
+                        <div class="form-group">
+                            <input type="text" placeholder="Email" class="form-control" name="email">
+                        </div>
+                        <div class="form-group">
+                            <input type="password" placeholder="Password" class="form-control" name="password">
+                        </div>
+                        <button type="submit" class="btn btn-success">Sign in</button>
+                        <button type="submit" class="btn btn-info">Sign up?</button>
+                    }
+
+
+                </div><!--/.navbar-collapse -->
+            </div>
+        </nav>
+
+    </body>
+
+</html>

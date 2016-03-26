@@ -1,14 +1,12 @@
 package controllers;
 
-import play.*;
+import model.UserLogin;
 import play.data.Form;
 import play.data.FormFactory;
 import play.db.*;
 import play.mvc.*;
 
 import views.html.*;
-
-import model.userLogin;
 
 import javax.inject.Inject;
 import java.sql.Connection;
@@ -26,8 +24,8 @@ public class HomeController extends Controller {
 
     public Result login() {
 
-        Form<userLogin> userLoginForm = formFactory.form(userLogin.class);
-        userLogin user = userLoginForm.bindFromRequest().get();
+        Form<UserLogin> userLoginForm = formFactory.form(UserLogin.class);
+        UserLogin user = userLoginForm.bindFromRequest().get();
 
         Connection connection = db.getConnection();
         try {
@@ -49,7 +47,7 @@ public class HomeController extends Controller {
     }
 
     public Result welcome() {
-        Form<userLogin> userLoginForm = formFactory.form(userLogin.class);
-        return ok(framework.render(userLoginForm));}
+        Form<UserLogin> userLoginForm = formFactory.form(UserLogin.class);
+        return ok(framework.render(userLoginForm,false));}
 
 }

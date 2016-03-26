@@ -3,7 +3,7 @@ package model;
 /**
  * Created by highland0971 on 2016/3/26.
  */
-public class userLogin {
+public class UserLogin {
     private String email;
     private String password;
 
