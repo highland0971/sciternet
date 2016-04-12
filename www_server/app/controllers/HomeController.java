@@ -1,16 +1,25 @@
 package controllers;
 
-import model.UserLogin;
+import model.User_Info;
 import play.data.Form;
 import play.data.FormFactory;
 import play.db.*;
+import play.db.jpa.JPAApi;
+import play.db.jpa.Transactional;
 import play.mvc.*;
 
 import views.html.*;
 
 import javax.inject.Inject;
-import java.sql.Connection;
-import java.sql.SQLException;
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.ParameterExpression;
+import javax.persistence.criteria.Root;
+
 
 /**
  * This controller contains an action to handle HTTP requests
@@ -22,18 +31,47 @@ public class HomeController extends Controller {
     @Inject FormFactory formFactory;
     @Inject Database db;
 
+    JPAApi jpaApi;
+
+    @Inject
+    public HomeController(JPAApi api)
+    {
+        this.jpaApi = api;
+    }
+
+    @Transactional
     public Result login() {
 
-        Form<UserLogin> userLoginForm = formFactory.form(UserLogin.class);
-        UserLogin user = userLoginForm.bindFromRequest().get();
+        Form<User_Info> userLoginForm = formFactory.form(User_Info.class);
+        User_Info user = userLoginForm.bindFromRequest().get();
 
-        Connection connection = db.getConnection();
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        EntityManager em = jpaApi.em();
+
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery criteria = cb.createQuery(User_Info.class);
+        Root<User_Info> i = criteria.from(User_Info.class);
+
+        ParameterExpression<String> emailPara = cb.parameter(String.class);
+        ParameterExpression<String> pwdPara = cb.parameter(String.class);
+
+        criteria.select(i).where(cb.and(
+                cb.equal(i.get("email"),emailPara),
+                cb.equal(i.get("password"),pwdPara)
+        ));
+
+        TypedQuery<User_Info> query = em.createQuery(criteria).setParameter(emailPara,user.getEmail());
+        query.setParameter(pwdPara,user.getPassword());
+
+        try
+        {
+            User_Info qualifiedUser = query.getSingleResult();
+            //return ok("User " + qualifiedUser.getEmail()+ " payment type is "+qualifiedUser.getPayment_type());
+            return ok(framework.render(userLoginForm,true));
         }
-        return ok("email:"+user.getEmail()+" password:" + user.getPassword());
+        catch (NoResultException ex)
+        {
+            return ok("Failed to verify email:"+user.getEmail()+" password:" + user.getPassword());
+        }
     }
 
     /**
@@ -47,7 +85,7 @@ public class HomeController extends Controller {
     }
 
     public Result welcome() {
-        Form<UserLogin> userLoginForm = formFactory.form(UserLogin.class);
+        Form<User_Info> userLoginForm = formFactory.form(User_Info.class);
         return ok(framework.render(userLoginForm,false));}
 
 }
