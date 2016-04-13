@@ -59,14 +59,15 @@ public class HomeController extends Controller {
                 cb.equal(i.get("password"),pwdPara)
         ));
 
-        TypedQuery<User_Info> query = em.createQuery(criteria).setParameter(emailPara,user.getEmail());
+        TypedQuery<User_Info> query = em.createQuery(criteria);
+        query.setParameter(emailPara,user.getEmail());
         query.setParameter(pwdPara,user.getPassword());
 
         try
         {
             User_Info qualifiedUser = query.getSingleResult();
             //return ok("User " + qualifiedUser.getEmail()+ " payment type is "+qualifiedUser.getPayment_type());
-            return ok(framework.render(userLoginForm,true));
+            return ok(welcome.render(userLoginForm,true));
         }
         catch (NoResultException ex)
         {
@@ -86,6 +87,7 @@ public class HomeController extends Controller {
 
     public Result welcome() {
         Form<User_Info> userLoginForm = formFactory.form(User_Info.class);
-        return ok(framework.render(userLoginForm,false));}
-
+        //return ok(framework.render(userLoginForm,false));
+        return ok(welcome.render(userLoginForm, false));
+    }
 }

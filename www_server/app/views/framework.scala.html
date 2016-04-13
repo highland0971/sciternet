@@ -1,5 +1,5 @@
 @import model.User_Info
-@(identityForm:Form[User_Info],isLogin:Boolean = false)
+@(identityForm:Form[User_Info],isLogin:Boolean = false)(content:Html)
 
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -45,34 +45,60 @@
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" href="#">科学网络</a>
+                    <a class="navbar-brand" href="#">壁虎路由</a>
                 </div>
                 <div id="navbar" class="navbar-collapse collapse">
-                    <ul class="nav navbar-nav navbar-collapse collapse">
+                    <ul class="nav navbar-nav">
                         @if(isLogin) {
-                            <li class="active"><a href="#">我的网络</a></li>
-                            <li><a href="#about">升级计划</a></li>
+                            <li class="active"><a href="#">流量监控</a></li>
+                            <li><a href="#">付费计划</a></li>
+                            <li><a href="#">奖励计划</a></li>
+                        }else{
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">产品与解决方案 <span class="caret"></span></a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#">离线下载</a></li>
+                                    <li><a href="#">网际加速</a></li>
+                                </ul>
+                            </li>
                         }
-                            <li><a href="#firmware">固件下载</a></li>
-                            <li><a href="#contact">关于</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">技术支持 <span class="caret"></span></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="#">固件下载</a></li>
+                                <li><a href="#">使用帮助</a></li>
+                                @if(isLogin) {
+                                    <li><a href="#">问题反馈</a></li>
+                                }
+                            </ul>
+                        </li>
                     </ul>
 
-
-                    @helper.form(action = routes.HomeController.login(),'id->"identityForm",'class->"navbar-form navbar-right"){
-                        <div class="form-group">
-                            <input type="text" placeholder="Email" class="form-control" name="email">
-                        </div>
-                        <div class="form-group">
-                            <input type="password" placeholder="Password" class="form-control" name="password">
-                        </div>
-                        <button type="submit" class="btn btn-success">Sign in</button>
-                        <button type="submit" class="btn btn-info">Sign up?</button>
+                    @if(isLogin) {
+                        @helper.form(action = routes.HomeController.login(),'id->"identityForm",'class->"navbar-form navbar-right") {
+                            <button type="submit" class="btn btn-danger">注销</button>
+                        }
+                    }else{
+                        @helper.form(action = routes.HomeController.login(),'id->"identityForm",'class->"navbar-form navbar-right"){
+                            <div class="form-group">
+                                <input type="text" placeholder="Email" class="form-control" name="email">
+                            </div>
+                            <div class="form-group">
+                                <input type="password" placeholder="Password" class="form-control" name="password">
+                            </div>
+                            <button type="submit" class="btn btn-success">登陆</button>
+                            <button type="submit" class="btn btn-info">试用</button>
+                        }
                     }
 
 
                 </div><!--/.navbar-collapse -->
             </div>
         </nav>
+
+
+        @content
+
 
     </body>
 
