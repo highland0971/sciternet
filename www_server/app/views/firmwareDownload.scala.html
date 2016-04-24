@@ -1,0 +1,64 @@
+@(firmware:Map[String, Map[String,String]])
+
+@framework(null,true){
+    <div class="container">
+        <h1>欢迎加入壁虎体验计划，仅需几步便可揭开惊艳互联之旅</h1>
+
+        <div class="row">
+            <div class="col-sm-8 col-md-8">
+                <h1 class="text-center">此处需要配图，并说明邮箱和密码的作用</h1>
+            </div>
+            <div class="col-sm-4 col-md-4">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h2 class="panel-title">固件下载</h2>
+                    </div>
+
+                    <div class="panel-body">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default">品牌选择</button>
+                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span class="caret"></span>
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    @for(p <- firmware) {
+                                        <li><a href="#">@p._1 </a></li>
+                                    }
+                                </ul>
+                            </div>
+
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default">型号选择</button>
+                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span class="caret"></span>
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#">Action</a></li>
+                                </ul>
+                            </div>
+
+                        <div class="progress" style="margin-top: 20px;">
+                            <div class="progress-bar progress-bar-info progress-bar-striped active" style="width: 100%">
+                                <span class="sr-only">100% Complete (warning)</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 20px;">
+                            <button type="button" class="btn btn-primary btn-block btn-sm" >下载</button>
+                        </div>
+                        <form method="GET" action="/trial_brief">
+                            <button type="submit" class="btn btn-default">下一步</button>
+                        </form>
+
+                    </div>
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+}

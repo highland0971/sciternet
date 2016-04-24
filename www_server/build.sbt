@@ -16,3 +16,5 @@ libraryDependencies ++= Seq(
 )
 
 PlayKeys.externalizeResources := false
+
+fork in run := true

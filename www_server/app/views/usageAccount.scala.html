@@ -1,0 +1,12 @@
+@(dates:List[Integer],usages:List[Double])
+
+@framework(null,true){
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js"></script>
+  <ul>
+    @for(date <- dates){
+      <li>
+        <span>@date</span>:<span>@usages(dates.indexOf(date))</span>
+      </li>
+    }
+  </ul>
+}

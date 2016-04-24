@@ -12,12 +12,13 @@
 
 
         <!-- Persistent class in project -->
-        <class>model.User_Info</class>
+        <class>model.User</class>
 
         <properties>
-            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLInnoDBDialect"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQL57InnoDBDialect"/>
             <property name="hibernate.format_sql" value="true"/>
             <property name="hibernate.use_sql_comments" value="true"/>
+            <property name="javax.persistence.schema-generation.database.action" value="create"/>
         </properties>
     </persistence-unit>
 
