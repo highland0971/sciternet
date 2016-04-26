@@ -1,22 +1,28 @@
 package controllers;
 
-import model.*;
+import model.PaymentType;
+import model.ServerType;
+import model.UsageAudit;
+import model.User;
 import play.data.DynamicForm;
 import play.data.Form;
 import play.data.FormFactory;
-import play.db.*;
+import play.db.Database;
 import play.db.jpa.JPAApi;
 import play.db.jpa.Transactional;
-import play.mvc.*;
-
+import play.libs.Json;
+import play.mvc.Controller;
+import play.mvc.Result;
 import views.html.*;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
-import javax.persistence.criteria.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.ParameterExpression;
+import javax.persistence.criteria.Root;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
@@ -39,6 +45,72 @@ public class HomeController extends Controller {
     public HomeController(JPAApi api)
     {
         this.jpaApi = api;
+    }
+
+    @Transactional(readOnly = true)
+    public Result getUsageDetails(Integer month) {
+        if(session("user_id")!=null && month >=1 && month <=12)
+        {
+            try
+            {
+                int year = LocalDate.now().getYear();
+                LocalDate today = LocalDate.of(year,month,1);
+                int startDate = (int)TimeUtil.toOrdinal(( LocalDate.of(year,month,1)));
+                int endDate = (int)TimeUtil.toOrdinal(( LocalDate.of(year,month,today.lengthOfMonth())));
+                System.out.println("Start Date "+startDate+" End Date "+endDate);
+                EntityManager em = jpaApi.em();
+                User currentUser = em.find(User.class, Long.valueOf(session("user_id")));
+                CriteriaBuilder cb = em.getCriteriaBuilder();
+                CriteriaQuery criteria = cb.createQuery(UsageAudit.class);
+                Root<UsageAudit> i = criteria.from(UsageAudit.class);
+
+                ParameterExpression<Integer> startingDate = cb.parameter(Integer.class);
+                ParameterExpression<Integer> endingDate = cb.parameter(Integer.class);
+
+                criteria.multiselect(
+                        i.<Integer>get("audit_date"),
+                        cb.sum(i.<Integer>get("usage_gb")),
+                        cb.sum(i.<Double>get("usage_mb"))
+                );
+
+                criteria.where(cb.and(
+                        cb.between(i.<Integer>get("audit_date"),startingDate,endingDate),
+                        cb.equal(i.get("auditedUser"),currentUser)
+                ));
+                criteria.orderBy(cb.asc(i.get("audit_date")));
+                criteria.groupBy(i.<Integer>get("audit_date"));
+
+                TypedQuery<UsageAudit> query = em.createQuery(criteria);
+                query.setParameter(startingDate,startDate);
+                query.setParameter(endingDate,endDate);
+
+                try {
+                    List<UsageAudit> result = query.getResultList();
+                    Map<Integer,Double> jsonTarget = new HashMap<>();
+                    for (UsageAudit audit : result) {
+
+                        int day = TimeUtil.fromOrdinal(audit.getAudit_date()).getDayOfMonth();
+                        double usage = audit.getUsage_gb()*1024+audit.getUsage_mb();
+                        jsonTarget.put(day,usage);
+                        System.out.println(String.valueOf(day)+":"+String.valueOf(usage));
+
+                    }
+                    return ok(Json.toJson(jsonTarget));
+                }
+                catch (NoResultException ex)
+                {
+                    ex.printStackTrace();
+                    return internalServerError("Failed to fetch usage for user:"+session("user_id"));
+                }
+
+            }
+            catch (Exception ex)
+            {
+                ex.printStackTrace();
+                return internalServerError("Failed to fetch usage for user:"+session("user_id"));
+            }
+        }
+        return status(402,"Unexpected access!");
     }
 
     @Transactional(readOnly = true)

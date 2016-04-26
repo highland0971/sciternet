@@ -18,6 +18,8 @@ GET     /trial_brief                controllers.HomeController.trialBrief
 
 GET     /usage_account              controllers.HomeController.usageAccount
 
+GET     /usage_detial/:month        controllers.HomeController.getUsageDetails(month: Integer)
+
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

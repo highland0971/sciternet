@@ -2,11 +2,73 @@
 
 @framework(null,true){
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js"></script>
-  <ul>
-    @for(date <- dates){
-      <li>
-        <span>@date</span>:<span>@usages(dates.indexOf(date))</span>
-      </li>
-    }
-  </ul>
+  <script type="text/javascript">
+    $( document ).ready(function() {
+      console.log("document loaded");
+      var targetMonth = 3;
+      var api = "/usage_detial/"+targetMonth;
+      var response;
+      var jqxhr = $.getJSON(api,function(response){
+        var keys = Object.keys(response);
+        console.log(keys.toString());
+        console.log("length of keys "+keys.length);
+        var dates = new Array(keys.length);
+        var dailyUsages = new Array(keys.length);
+        var accumulatedUsages = new Array(keys.length);
+        var accumulatedUsage = 0;
+        for(var i=0;i<keys.length;i++)
+        {
+          dates[i] = keys[i];
+          dailyUsages[i] = response[keys[i]];
+          accumulatedUsage = response[keys[i]] + accumulatedUsage;
+          accumulatedUsages[i] = accumulatedUsage;
+        }
+        console.log(dates.toString());
+        Chart.defaults.global.responsive = true;
+        var ctx = $("#usageChart").get(0).getContext("2d");
+        var usageChart = new Chart(ctx);
+        gdata = {
+          labels: dates,
+          datasets: [
+            {
+              label: "PerDay",
+              fillColor: "rgba(220,220,220,0.2)",
+              strokeColor: "rgba(220,220,220,1)",
+              pointColor: "rgba(220,220,220,1)",
+              pointStrokeColor: "#fff",
+              pointHighlightFill: "#fff",
+              pointHighlightStroke: "rgba(220,220,220,1)",
+              data: dailyUsages
+            },
+            {
+              label: "Accumulated",
+              fillColor: "rgba(151,187,205,0.2)",
+              strokeColor: "rgba(151,187,205,1)",
+              pointColor:"rgba(151,187,205,1)",
+              pointStrokeColor: "#fff",
+              pointHighlightFill: "#fff",
+              pointHighlightStroke: "rgba(220,220,220,1)",
+              data: accumulatedUsages
+            }
+          ]
+        };
+        var myLineChart =  usageChart.Line(gdata);
+      });
+
+    });
+  </script>
+  <div class="container">
+
+    <nav>
+      <ul class="pagination">
+        <li><a href="#">1</a></li>
+        <li><a href="#">2</a></li>
+        <li><a href="#">3</a></li>
+        <li><a href="#">4</a></li>
+        <li><a href="#">5</a></li>
+      </ul>
+    </nav>
+    <canvas id="usageChart"></canvas >
+  </div>
+
 }
