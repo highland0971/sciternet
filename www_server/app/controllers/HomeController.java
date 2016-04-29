@@ -48,7 +48,7 @@ public class HomeController extends Controller {
     }
 
     @Transactional(readOnly = true)
-    public Result getUsageDetails(Integer month) {
+    public Result jsonGetUsageDetails(Integer month) {
         if(session("user_id")!=null && month >=1 && month <=12)
         {
             try
@@ -114,14 +114,14 @@ public class HomeController extends Controller {
     }
 
     @Transactional(readOnly = true)
-    public Result usageAccount() {
+    public Result usageBrief() {
         if(session("user_id")!=null)
         {
-
             try
             {
                 LocalDate today = LocalDate.now();
                 int month = today.getMonthValue();
+
                 int year = today.getYear();
                 int startDate = (int)TimeUtil.toOrdinal(( LocalDate.of(year,month,1)));
                 int endDate = (int)TimeUtil.toOrdinal(( LocalDate.of(year,month,today.lengthOfMonth())));
@@ -164,16 +164,19 @@ public class HomeController extends Controller {
                         days.add(day);
                         usages.add(usage);
                         System.out.println(String.valueOf(day)+":"+String.valueOf(usage));
-
                     }
-                    return ok(usageAccount.render(days, usages));
+                    List<Integer> months = new ArrayList();
+                    for(int c = 0 ; c < today.getMonthValue();c++)
+                    {
+                        months.add(c+1);
+                    }
+                    return ok(usageAccount.render(months));
                 }
                 catch (NoResultException ex)
                 {
                     ex.printStackTrace();
                     return internalServerError("Failed to fetch usage for user:"+session("user_id"));
                 }
-
             }
             catch (Exception ex)
             {
@@ -237,7 +240,7 @@ public class HomeController extends Controller {
             User qualifiedUser = query.getSingleResult();
             session("user_id",Long.toString(qualifiedUser.getUser_id()));
             session("user_email",qualifiedUser.getEmail());
-            return usageAccount();
+            return usageBrief();
         }
         catch (NoResultException ex)
         {
@@ -293,7 +296,12 @@ public class HomeController extends Controller {
                     MessageDigest md = MessageDigest.getInstance("MD5");
                     md.update(session("session_email").getBytes());
                     md.update(session("session_pwd").getBytes());
-                    newUser.setToken(md.digest().toString());
+                    String token = "";
+                    for(byte b : md.digest())
+                    {
+                        token += String.valueOf(b);
+                    }
+                    newUser.setToken(token);
                 }
                 catch (NoSuchAlgorithmException ex)
                 {

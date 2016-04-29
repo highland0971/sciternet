@@ -16,9 +16,9 @@ POST    /firmware_download          controllers.HomeController.firmwareDownload
 
 GET     /trial_brief                controllers.HomeController.trialBrief
 
-GET     /usage_account              controllers.HomeController.usageAccount
+GET     /usage_account              controllers.HomeController.usageBrief
 
-GET     /usage_detial/:month        controllers.HomeController.getUsageDetails(month: Integer)
+GET     /json_usage_detial/:month        controllers.HomeController.jsonGetUsageDetails(month: Integer)
 
 
 # Map static resources from the /public folder to the /assets URL path
