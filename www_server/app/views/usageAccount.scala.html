@@ -69,15 +69,19 @@
 
   </script>
   <div class="container">
-
-    <nav>
-      <ul class="pagination" id="month_navigation">
+    <div class="row">
+      Notice
+    </div>
+    <div class="row">
+      <nav>
+        <ul class="pagination" id="month_navigation">
         @for(month<-candidateMonths) {
           <li><a href="#" onclick="updateUsageChart(@month)">@month</a></li>
         }
-      </ul>
-    </nav>
-    <canvas id="usageChart"></canvas >
+        </ul>
+      </nav>
+      <canvas id="usageChart"></canvas >
+    </div>
   </div>
 
 }

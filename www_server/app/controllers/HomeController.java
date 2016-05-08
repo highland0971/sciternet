@@ -47,6 +47,10 @@ public class HomeController extends Controller {
         this.jpaApi = api;
     }
 
+    public Result chargePlanBrief() {
+        return ok(chargePlan.render());
+    }
+
     @Transactional(readOnly = true)
     public Result jsonGetUsageDetails(Integer month) {
         if(session("user_id")!=null && month >=1 && month <=12)
@@ -252,7 +256,6 @@ public class HomeController extends Controller {
         session().remove("user_id");
         return redirect(routes.HomeController.welcome());
     }
-
 
     public Result welcome() {
         Form<User> userLoginForm = formFactory.form(User.class);
