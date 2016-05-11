@@ -24,10 +24,23 @@ public class FinanceController {
         helper.feedPayload("TOKEN",session("token"));
         helper.doPostRequest();
         Map<String,String> response = helper.getResponsePair();
+        System.out.println(response.toString());
 
         if(response != null & response.get("ACK").equals("Success"))
         {
-            return ok(response.toString());
+            HttpUtil doHelper = new HttpUtil("https://api-3t.sandbox.paypal.com/nvp","UTF-8");
+            doHelper.setupConnection("POST");
+            doHelper.feedPayload("USER","joy.highland-facilitator_api1.gmail.com");
+            doHelper.feedPayload("PWD","KD5EEL7CJ5JBKT2C");
+            doHelper.feedPayload("SIGNATURE","AFcWxV21C7fd0v3bYYYRCpSSRl31A-.56hvs1Mc6lr992jugDRWcMECK");
+            doHelper.feedPayload("METHOD","DoExpressCheckoutPayment");
+            doHelper.feedPayload("VERSION","124");
+            doHelper.feedPayload("TOKEN",session("token"));
+            doHelper.feedPayload("PAYERID",response.get("PAYERID"));
+            doHelper.doPostRequest();
+            Map<String,String> finalResult = doHelper.getResponsePair();
+            System.out.println(finalResult.toString());
+            return ok(finalResult.toString());
         }
         else{
             return status(401,response.toString());
