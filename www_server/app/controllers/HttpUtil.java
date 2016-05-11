@@ -71,7 +71,7 @@ public class HttpUtil {
                 }
                 result.deleteCharAt(result.length() - 1);
                 responseStr = result.toString();
-                return responseStr;
+                return getResponseStr();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -113,10 +113,10 @@ public class HttpUtil {
     public Map<String,String> getResponsePair()
     {
         Map<String ,String> responsePair = new HashMap<>();
-        if(responseStr != null && !responseStr.isEmpty())
+        if(getResponseStr() != null && !getResponseStr().isEmpty())
         {
             try {
-                for(String pairStr : responseStr.split("&"))
+                for(String pairStr : getResponseStr().split("&"))
                 {
 
                         String decodedStr = URLDecoder.decode(pairStr,codec);
@@ -129,5 +129,9 @@ public class HttpUtil {
             }
         }
         return null;
+    }
+
+    public String getResponseStr() {
+        return responseStr;
     }
 }
