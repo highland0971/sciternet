@@ -4,13 +4,35 @@ import play.mvc.Result;
 
 import java.util.Map;
 
-import static play.mvc.Results.redirect;
-import static play.mvc.Results.status;
+import static play.mvc.Controller.session;
+import static play.mvc.Results.*;
 
 /**
  * Created by vivia on 2016/5/7.
  */
 public class FinanceController {
+
+    public Result GetExpressCheckoutDetails() {
+        HttpUtil helper = new HttpUtil("https://api-3t.sandbox.paypal.com/nvp","UTF-8");
+        helper.setupConnection("POST");
+
+        helper.feedPayload("USER","joy.highland-facilitator_api1.gmail.com");
+        helper.feedPayload("PWD","KD5EEL7CJ5JBKT2C");
+        helper.feedPayload("SIGNATURE","AFcWxV21C7fd0v3bYYYRCpSSRl31A-.56hvs1Mc6lr992jugDRWcMECK");
+        helper.feedPayload("METHOD","GetExpressCheckoutDetails");
+        helper.feedPayload("TOKEN",session("token"));
+        helper.doPostRequest();
+        Map<String,String> response = helper.getResponsePair();
+
+        if(response != null & response.get("ACK").equals("Success"))
+        {
+            return ok(response.toString());
+        }
+        else{
+            return status(401,response.toString());
+        }
+    }
+
     public Result SetExpressCheckout() {
         HttpUtil helper = new HttpUtil("https://api-3t.sandbox.paypal.com/nvp","UTF-8");
         helper.setupConnection("POST");
@@ -20,8 +42,8 @@ public class FinanceController {
         helper.feedPayload("SIGNATURE","AFcWxV21C7fd0v3bYYYRCpSSRl31A-.56hvs1Mc6lr992jugDRWcMECK");
         helper.feedPayload("METHOD","SetExpressCheckout");
         helper.feedPayload("VERSION","124");
-        helper.feedPayload("RETURNURL","http://104.129.0.243/pay");
-        helper.feedPayload("CANCELURL","http://104.129.0.243/pay_cancel");
+        helper.feedPayload("RETURNURL","http://204.44.94.126/GetExpressCheckoutDetails");
+        helper.feedPayload("CANCELURL","http://204.44.94.126/pay_cancel");
         helper.feedPayload("REQCONFIRMSHIPPING","0");
         helper.feedPayload("NOSHIPPING","1");
         helper.feedPayload("CALLBACKVERSION","61.0");
@@ -51,10 +73,13 @@ public class FinanceController {
 
         if(response != null & response.get("ACK").equals("Success"))
         {
+            session("token",response.get("TOKEN"));
             return redirect("https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_express-checkout&token="+response.get("TOKEN"));
         }
         else{
             return status(401,response.toString());
         }
     }
+
+
 }

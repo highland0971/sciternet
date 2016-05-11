@@ -24,6 +24,9 @@ GET     /chargePlan                 controllers.HomeController.chargePlanBrief
 
 GET     /SetExpressCheckout         controllers.FinanceController.SetExpressCheckout
 
+GET     /GetExpressCheckoutDetails  controllers.FinanceController.GetExpressCheckoutDetails
+
+
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
