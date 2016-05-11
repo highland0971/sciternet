@@ -41,7 +41,7 @@ public class FinanceController {
         helper.feedPayload("PWD","KD5EEL7CJ5JBKT2C");
         helper.feedPayload("SIGNATURE","AFcWxV21C7fd0v3bYYYRCpSSRl31A-.56hvs1Mc6lr992jugDRWcMECK");
         helper.feedPayload("METHOD","SetExpressCheckout");
-        helper.feedPayload("VERSION","124");
+        //helper.feedPayload("VERSION","124");
         helper.feedPayload("RETURNURL","http://204.44.94.126:9000/GetExpressCheckoutDetails");
         helper.feedPayload("CANCELURL","http://204.44.94.126:9000/pay_cancel");
         helper.feedPayload("REQCONFIRMSHIPPING","0");
