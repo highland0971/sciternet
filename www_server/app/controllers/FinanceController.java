@@ -37,6 +37,9 @@ public class FinanceController {
             doHelper.feedPayload("VERSION","124");
             doHelper.feedPayload("TOKEN",session("token"));
             doHelper.feedPayload("PAYERID",response.get("PAYERID"));
+            doHelper.feedPayload("PAYMENTREQUEST_0_AMT",response.get("PAYMENTREQUEST_0_AMT"));
+            doHelper.feedPayload("PAYMENTREQUEST_0_ITEMAMT",response.get("PAYMENTREQUEST_0_ITEMAMT"));
+            doHelper.feedPayload("PAYMENTREQUEST_0_PAYMENTACTION","Sale");
             doHelper.doPostRequest();
             Map<String,String> finalResult = doHelper.getResponsePair();
             System.out.println(finalResult.toString());
@@ -84,6 +87,7 @@ public class FinanceController {
 
         helper.doPostRequest();
         Map<String,String> response = helper.getResponsePair();
+        System.out.println(response.toString());
 
         if(response != null & response.get("ACK").equals("Success"))
         {
