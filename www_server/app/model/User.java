@@ -3,10 +3,6 @@ package model;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Created by highland0971 on 2016/3/26.
@@ -39,7 +35,7 @@ public class User implements Serializable {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false,length = 64)
-    private PaymentType payment_type;
+    private AUDIT_TYPE payment_type;
 
     @Column(nullable = false)
     private int credit_data_gb = 0;
@@ -90,11 +86,11 @@ public class User implements Serializable {
         this.reg_data = reg_data;
     }
 
-    public PaymentType getPayment_type() {
+    public AUDIT_TYPE getPayment_type() {
         return payment_type;
     }
 
-    public void setPayment_type(PaymentType payment_type) {
+    public void setPayment_type(AUDIT_TYPE payment_type) {
         this.payment_type = payment_type;
     }
 

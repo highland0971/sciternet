@@ -1,6 +1,6 @@
 package controllers;
 
-import model.PaymentType;
+import model.AUDIT_TYPE;
 import model.ServerType;
 import model.UsageAudit;
 import model.User;
@@ -291,7 +291,7 @@ public class HomeController extends Controller {
                 newUser.setCredit_data_gb(1);
 
                 newUser.setExpire_date(TimeUtil.toOrdinal(LocalDate.now())+31);
-                newUser.setPayment_type(PaymentType.usage_duration);
+                newUser.setPayment_type(AUDIT_TYPE.usage_duration);
                 newUser.setReg_data(TimeUtil.toOrdinal(LocalDate.now()));
                 newUser.setServer_type(ServerType.shared);
 

@@ -1,4 +1,91 @@
 @framework(null,true){
+
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+  <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+
+  <script>
+          $(function() {
+            $( "#slider_usage_charge" ).slider({
+              range: "min",
+              value: 10,
+              min: 5,
+              max: 50,
+              slide: function( event, ui ) {
+                var fee = 1.6;
+                if(ui.value > 1 && ui.value <= 17){
+                  fee = 1.6;
+                }
+                else if(ui.value > 17 && ui.value <= 24){
+                  fee = 1.4;
+                }
+                else if(ui.value > 24 && ui.value <= 32){
+                  fee = 1.2;
+                }
+                else if(ui.value > 32){
+                  fee = 1;
+                }
+                $( "#usage_charge" ).val( ui.value*fee + "RMB");
+                $( "#amount_usage_charge" ).val( ui.value + "GB");
+              }
+            });
+            $( "#amount_usage_charge" ).val( $( "#slider_usage_charge" ).slider( "value" ) + "GB");
+            $( "#usage_charge" ).val( $( "#slider_usage_charge" ).slider( "value" )*1.6 +"RMB");
+
+            $( "#slider_year_charge" ).slider({
+              range: "min",
+              value: 12,
+              min: 12,
+              max: 12,
+              slide: function( event, ui ) {
+                var fee = 1.6;
+                if(ui.value > 1 && ui.value <= 17){
+                  fee = 1.6;
+                }
+                else if(ui.value > 17 && ui.value <= 24){
+                  fee = 1.4;
+                }
+                else if(ui.value > 24 && ui.value <= 32){
+                  fee = 1.2;
+                }
+                else if(ui.value > 32){
+                  fee = 1;
+                }
+                $( "#year_charge" ).val( ui.value*fee + "RMB");
+                $( "#amount_year_charge" ).val( ui.value + "GB");
+              }
+            });
+            $( "#amount_year_charge" ).val( $( "#slider_year_charge" ).slider( "value" ) + "GB");
+            $( "#year_charge" ).val( $( "#slider_year_charge" ).slider( "value" )*1.6 +"RMB");
+
+            $( "#slider_month_charge" ).slider({
+              range: "min",
+              value: 6,
+              min: 1,
+              max: 12,
+              slide: function( event, ui ) {
+                var fee = 1.6;
+                if(ui.value > 1 && ui.value <= 17){
+                  fee = 1.6;
+                }
+                else if(ui.value > 17 && ui.value <= 24){
+                  fee = 1.4;
+                }
+                else if(ui.value > 24 && ui.value <= 32){
+                  fee = 1.2;
+                }
+                else if(ui.value > 32){
+                  fee = 1;
+                }
+                $( "#month_charge" ).val( ui.value*fee + "RMB");
+                $( "#amount_month_charge" ).val( ui.value + "GB");
+              }
+            });
+            $( "#amount_month_charge" ).val( $( "#slider_month_charge" ).slider( "value" ) + "GB");
+            $( "#month_charge" ).val( $( "#slider_month_charge" ).slider( "value" )*1.6 +"RMB");
+          });
+  </script>
+
+
   <div class="container">
     <div class="row">
       <div class="col-md-12">
@@ -9,37 +96,27 @@
       <div class="col-md-4">
         <div class="panel panel-default">
           <div class="panel-heading">
-            <h3 class="panel-title">月付计划</h3>
+            <h3 class="panel-title">年付计划</h3>
           </div>
           <div class="panel-body">
-            <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+            <p>
+              全家桶，全家量，每月200GB流量，一年有效。
+            </p>
+            <form action="/chargeGateway" method="post">
+              <p>
+                <label for="amount_year_charge">购买月份:</label>
+                <input type="text" id="amount_year_charge" readonly style="border:0; color:#f6931f; font-weight:bold;">
+              </p>
+              <div id="slider_year_charge"></div>
+              <p>
+                <label for="year_charge">价格:</label>
+                <input type="text" id="year_charge" readonly style="border:0; color:#f6931f; font-weight:bold;">
+              </p>
+              <p></p>
 
-                <!-- Identify your business so that you can collect the payments. -->
-              <input type="hidden" name="business" value="herschelgomez@@xyzzyu.com">
-
-                <!-- Specify a Buy Now button. -->
-              <input type="hidden" name="cmd" value="_xclick">
-
-                <!-- Specify details about the item that buyers will purchase. -->
-              <input type="hidden" name="item_name" value="Hot Sauce-12 oz. Bottle">
-              <input type="hidden" name="amount" value="5.95">
-              <input type="hidden" name="currency_code" value="USD">
-
-                <!-- Specify the discount amounts that apply to the item. -->
-              <input type="hidden" name="discount_amount" value="0.15">
-              <input type="hidden" name="discount_amount2" value="0.20">
-              <input type="hidden" name="discount_num" value="4">
-
-                <!-- Prompt buyers to enter the quantities they want. -->
-              <input type="hidden" name="undefined_quantity" value="1">
-
-                <!-- Display the payment button. -->
               <input type="image" name="submit" border="0"
-              src="https://www.paypalobjects.com/en_US/i/btn/btn_buynow_LG.gif"
+              src="https://www.paypal.com/zh_XC/i/btn/btn_xpressCheckout.gif"
               alt="PayPal - The safer, easier way to pay online">
-              <img alt="" border="0" width="1" height="1"
-              src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" >
-
             </form>
           </div>
         </div>
@@ -47,32 +124,29 @@
       <div class="col-md-4">
         <div class="panel panel-default">
           <div class="panel-heading">
-            <h3 class="panel-title">年付计划</h3>
+            <h3 class="panel-title">月付计划</h3>
           </div>
           <div class="panel-body">
-            <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+            <p>
+              精打细算，时惠之选，每月200GB流量，逐月失效。
+            </p>
+            <form action="/chargeGateway" method="post">
+              <p>
+                <label for="amount_month_charge">购买月数:</label>
+                <input type="text" id="amount_month_charge" readonly style="border:0; color:#f6931f; font-weight:bold;">
+              </p>
 
-                <!-- Identify your business so that you can collect the payments. -->
-              <input type="hidden" name="business" value="herschelgomez@@xyzzyu.com">
 
-                <!-- Specify a Buy Now button. -->
-              <input type="hidden" name="cmd" value="_xclick">
+              <div id="slider_month_charge"></div>
+              <p>
+                <label for="month_charge">价格:</label>
+                <input type="text" id="month_charge" readonly style="border:0; color:#f6931f; font-weight:bold;">
+              </p>
+              <p></p>
 
-                <!-- Specify details about the item that buyers will purchase. -->
-              <input type="hidden" name="item_name" value="Hot Sauce-12 oz. Bottle">
-              <input type="hidden" name="amount" value="5.95">
-              <input type="hidden" name="currency_code" value="USD">
-
-                <!-- Prompt buyers to enter the quantities they want. -->
-              <input type="hidden" name="defined_quantity" value="3">
-
-                <!-- Display the payment button. -->
               <input type="image" name="submit" border="0"
-              src="https://www.paypalobjects.com/en_US/i/btn/btn_buynow_LG.gif"
+              src="https://www.paypal.com/zh_XC/i/btn/btn_xpressCheckout.gif"
               alt="PayPal - The safer, easier way to pay online">
-              <img alt="" border="0" width="1" height="1"
-              src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" >
-
             </form>
           </div>
         </div>
@@ -83,7 +157,27 @@
             <h3 class="panel-title">流量预付</h3>
           </div>
           <div class="panel-body">
-            Panel content
+            <p>
+              用多少，买多少，流量一年有效，量多价优。
+            </p>
+            <form action="/chargeGateway" method="post">
+              <p>
+                <label for="amount_usage_charge">购买流量:</label>
+                <input type="text" id="amount_usage_charge" readonly style="border:0; color:#f6931f; font-weight:bold;">
+              </p>
+
+
+              <div id="slider_usage_charge"></div>
+              <p>
+                <label for="usage_charge">价格:</label>
+                <input type="text" id="usage_charge" readonly style="border:0; color:#f6931f; font-weight:bold;">
+              </p>
+              <p></p>
+
+              <input type="image" name="submit" border="0"
+              src="https://www.paypal.com/zh_XC/i/btn/btn_xpressCheckout.gif"
+              alt="PayPal - The safer, easier way to pay online">
+            </form>
           </div>
         </div>
       </div>
