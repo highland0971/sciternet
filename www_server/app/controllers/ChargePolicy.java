@@ -5,7 +5,10 @@ package controllers;
  */
 public class ChargePolicy {
 
-    private static int [] rangeStepForUsage = {1,17,24,32,44,50};
+    private static double USD_CNY_Rate = 6.6;
+    private static double changeRate = 1;
+
+    private static int [] rangeStepForUsage = {17,24,32,44,50};
 
     private static double [] priceStepForUsage = {1.6,1.4,1.2,1};
 
@@ -34,5 +37,41 @@ public class ChargePolicy {
 
     public static double getPriceForYear() {
         return priceForYear;
+    }
+
+    public static double getTotalCharge(String chargeType,int amount,String Currency)
+    {
+        if(Currency == "USD")
+            changeRate = 1/ getUSD_CNY_Rate();
+
+        switch (chargeType){
+            case "MONTH":
+            {
+                for(int i=0;i<getRangeStepForMonth().length;i++)
+                    if (getRangeStepForMonth()[i] >= amount)
+                        return amount * getPriceStepForMonth()[i] * changeRate;
+                return amount * getPriceStepForMonth()[getPriceStepForMonth().length -1 ] * changeRate;
+            }
+            case "Usage":
+            {
+                for(int i=0;i<getRangeStepForUsage().length;i++)
+                    if (getRangeStepForUsage()[i] >= amount)
+                        return amount * getPriceStepForUsage()[i] * changeRate;
+                return amount * getPriceStepForUsage()[getPriceStepForUsage().length -1 ] * changeRate;
+            }
+            case "Year":
+            {
+                return amount *getPriceForYear()*changeRate;
+            }
+        }
+        return -1;
+    }
+
+    public static double getUSD_CNY_Rate() {
+        return USD_CNY_Rate;
+    }
+
+    public static void setUSD_CNY_Rate(double USD_CNY_Rate) {
+        ChargePolicy.USD_CNY_Rate = USD_CNY_Rate;
     }
 }
