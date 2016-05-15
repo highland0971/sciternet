@@ -1,7 +1,13 @@
 package controllers;
 
+import play.Configuration;
+import play.data.DynamicForm;
+import play.data.FormFactory;
 import play.mvc.Result;
 
+import javax.inject.Inject;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 
 import static play.mvc.Controller.session;
@@ -11,6 +17,106 @@ import static play.mvc.Results.*;
  * Created by vivia on 2016/5/7.
  */
 public class FinanceController {
+
+    @Inject
+    FormFactory formFactory;
+
+    public Result cancelPaypalCheckout() {
+        return play.mvc.Results.TODO;
+    }
+
+    public Result confirmPaypalCheckout() {
+        return play.mvc.Results.TODO;
+    }
+
+    public Result PayPalCheckout() {
+        //TODO change Result into promised result async
+
+        DynamicForm requestData = formFactory.form().bindFromRequest();
+        String chargeType = requestData.get("charge_type");
+        String chargeAmount = requestData.get("charge_amount");
+        Configuration cfg = Configuration.root();
+        PayPalExpressCheckoutHelper helper = new PayPalExpressCheckoutHelper(cfg.getBoolean("paypal.sandbox"),cfg.getString("paypal.user"),
+                cfg.getString("paypal.pwd"),
+                cfg.getString("paypal.signature"));
+
+        try {
+            InetAddress addr = InetAddress.getLocalHost();
+            String ip=addr.getHostAddress().toString();
+            Map<String,String> response;
+            if(chargeType !=null && !chargeType.isEmpty() && chargeAmount!=null && Integer.valueOf(chargeAmount) > 0)
+            {
+                switch (chargeType)
+                {
+                    case "year":
+                        response = helper.SetExpressCheckout(
+                                "http://"+ip+routes.FinanceController.confirmPaypalCheckout(),
+                                "http://"+ip+routes.FinanceController.cancelPaypalCheckout(),
+                                "XXX",
+                                "包年套餐（包年数）",
+                                "每月200GB流量",
+                                Integer.valueOf(chargeAmount),
+                                ChargePolicy.getChargeUnitPrice(chargeType,Integer.valueOf(chargeAmount),"USD"),
+                                "Hello Ketty!"
+                        );
+                        if(response != null & response.get("ACK").equals("Success"))
+                        {
+                            session("token",response.get("TOKEN"));
+                            return redirect(helper.getPayPalAddr()+"/cgi-bin/webscr?cmd=_express-checkout&token="+response.get("TOKEN"));
+                        }
+                        else{
+                            return status(401,response.toString());
+                        }
+                    case "month":
+                        response = helper.SetExpressCheckout(
+                                "http://"+ip+routes.FinanceController.confirmPaypalCheckout(),
+                                "http://"+ip+routes.FinanceController.cancelPaypalCheckout(),
+                                "XXX",
+                                "包月套餐（包月数）",
+                                "每月100GB流量",
+                                Integer.valueOf(chargeAmount),
+                                ChargePolicy.getChargeUnitPrice(chargeType,Integer.valueOf(chargeAmount),"USD"),
+                                "Hello Ketty!"
+                        );
+                        if(response != null & response.get("ACK").equals("Success"))
+                        {
+                            session("token",response.get("TOKEN"));
+                            return redirect(helper.getPayPalAddr()+"/cgi-bin/webscr?cmd=_express-checkout&token="+response.get("TOKEN"));
+                        }
+                        else{
+                            return status(401,response.toString());
+                        }
+                    case "usage":
+                        response = helper.SetExpressCheckout(
+                                "http://"+ip+routes.FinanceController.confirmPaypalCheckout(),
+                                "http://"+ip+routes.FinanceController.cancelPaypalCheckout(),
+                                "XXX",
+                                "流量套餐（GB）",
+                                "总套餐流量，一年期",
+                                Integer.valueOf(chargeAmount),
+                                ChargePolicy.getChargeUnitPrice(chargeType,Integer.valueOf(chargeAmount),"USD"),
+                                "Hello Ketty!"
+                        );
+                        if(response != null & response.get("ACK").equals("Success"))
+                        {
+                            session("token",response.get("TOKEN"));
+                            return redirect(helper.getPayPalAddr()+"/cgi-bin/webscr?cmd=_express-checkout&token="+response.get("TOKEN"));
+                        }
+                        else{
+                            return status(401,response.toString());
+                        }
+                }
+                return status(401,"Invalid charging request!");
+            }
+            else {
+                return status(401,"Invalid charging request!");
+            }
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+
+        return status(401,"Unknown status!");
+    }
 
     public Result GetExpressCheckoutDetails() {
 
