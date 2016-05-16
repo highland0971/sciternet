@@ -76,8 +76,8 @@ public class FinanceController {
                 {
                     case "year":
                         response = helper.SetExpressCheckout(
-                                "http://"+ip+ routes.FinanceController.confirmPayPalCheckout(),
-                                "http://"+ip+ routes.FinanceController.cancelPayPalCheckout(),
+                                "http://"+ip+ ":"+ cfg.getString("http.port")+routes.FinanceController.confirmPayPalCheckout(),
+                                "http://"+ip+ ":"+ cfg.getString("http.port")+ routes.FinanceController.cancelPayPalCheckout(),
                                 invoice.getId().toString(),
                                 "包年套餐（包年数）",
                                 "每月200GB流量",
@@ -95,8 +95,8 @@ public class FinanceController {
                         }
                     case "month":
                         response = helper.SetExpressCheckout(
-                                "http://"+ip+ routes.FinanceController.confirmPayPalCheckout(),
-                                "http://"+ip+ routes.FinanceController.cancelPayPalCheckout(),
+                                "http://"+ip+ ":"+ cfg.getString("http.port")+ routes.FinanceController.confirmPayPalCheckout(),
+                                "http://"+ip+ ":"+ cfg.getString("http.port")+ routes.FinanceController.cancelPayPalCheckout(),
                                 invoice.getId().toString(),
                                 "包月套餐（包月数）",
                                 "每月100GB流量",
@@ -114,8 +114,8 @@ public class FinanceController {
                         }
                     case "usage":
                         response = helper.SetExpressCheckout(
-                                "http://"+ip+ routes.FinanceController.confirmPayPalCheckout(),
-                                "http://"+ip+ routes.FinanceController.cancelPayPalCheckout(),
+                                "http://"+ip+ ":"+ cfg.getString("http.port")+ routes.FinanceController.confirmPayPalCheckout(),
+                                "http://"+ip+ ":"+ cfg.getString("http.port")+ routes.FinanceController.cancelPayPalCheckout(),
                                 invoice.getId().toString(),
                                 "流量套餐（GB）",
                                 "总套餐流量，一年期",
