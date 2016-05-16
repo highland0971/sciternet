@@ -338,7 +338,7 @@ public class HomeController extends Controller {
             session("session_email",email);
             session("session_pwd",password);
 
-            String Message = "Your verifaction code is "+randNum;
+            String Message = "Your registeration verifaction code is :"+randNum;
             try {
                 MailUtil.sendMail("15802221580@139.com", "15802221580@139.com", "jKr00t00", email, "Verification", Message);
                 return ok(emailVerify.render(userLoginForm,session("user_id")!=null,session("user_id")));

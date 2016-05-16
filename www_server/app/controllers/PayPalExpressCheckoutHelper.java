@@ -61,6 +61,8 @@ public class PayPalExpressCheckoutHelper {
 
         helper.feedPayload("RETURNURL",succUrl);
         helper.feedPayload("CANCELURL",failUrl);
+        helper.feedPayload("NOTETOBUYER",noteToUser);
+
         helper.feedPayload("PAYMENTREQUEST_0_PAYMENTACTION","Sale");
         helper.feedPayload("PAYMENTREQUEST_0_PAYMENTREASON","None");
 

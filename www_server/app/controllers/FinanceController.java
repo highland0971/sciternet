@@ -1,13 +1,20 @@
 package controllers;
 
+import model.PAYMENT_GATEWAY;
+import model.PayPalInvoice;
+import model.User;
 import play.Configuration;
 import play.data.DynamicForm;
 import play.data.FormFactory;
+import play.db.jpa.JPAApi;
+import play.db.jpa.Transactional;
 import play.mvc.Result;
 
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.LocalDate;
 import java.util.Map;
 
 import static play.mvc.Controller.session;
@@ -21,16 +28,25 @@ public class FinanceController {
     @Inject
     FormFactory formFactory;
 
-    public Result cancelPaypalCheckout() {
-        return play.mvc.Results.TODO;
+    @Inject
+    JPAApi jpaApi;
+
+    public Result cancelPayPalCheckout() {
+        DynamicForm requestData = formFactory.form().bindFromRequest();
+        return ok(requestData.data().toString());
     }
 
-    public Result confirmPaypalCheckout() {
-        return play.mvc.Results.TODO;
+    public Result confirmPayPalCheckout() {
+        DynamicForm requestData = formFactory.form().bindFromRequest();
+        return ok(requestData.data().toString());
     }
 
+    @Transactional
     public Result PayPalCheckout() {
         //TODO change Result into promised result async
+        if(null == session("user_id"))
+            return status(401,"Invalid access!");
+
 
         DynamicForm requestData = formFactory.form().bindFromRequest();
         String chargeType = requestData.get("charge_type");
@@ -43,16 +59,26 @@ public class FinanceController {
         try {
             InetAddress addr = InetAddress.getLocalHost();
             String ip=addr.getHostAddress().toString();
-            Map<String,String> response;
+            Map<String,String> response = null;
             if(chargeType !=null && !chargeType.isEmpty() && chargeAmount!=null && Integer.valueOf(chargeAmount) > 0)
             {
+
+                EntityManager em = jpaApi.em();
+                PayPalInvoice invoice = new PayPalInvoice();
+                invoice.setPaiedUser(em.find(User.class, Long.valueOf(session("user_id"))));
+                invoice.setContract_amount(Integer.valueOf(chargeAmount));
+                invoice.setContract_type(chargeType);
+                invoice.setInvoice_date(TimeUtil.toOrdinal(LocalDate.now()));
+                invoice.setPaymentGateway(PAYMENT_GATEWAY.PAYPAL);
+                em.persist(invoice);
+
                 switch (chargeType)
                 {
                     case "year":
                         response = helper.SetExpressCheckout(
-                                "http://"+ip+routes.FinanceController.confirmPaypalCheckout(),
-                                "http://"+ip+routes.FinanceController.cancelPaypalCheckout(),
-                                "XXX",
+                                "http://"+ip+ this.confirmPayPalCheckout(),
+                                "http://"+ip+ this.cancelPayPalCheckout(),
+                                invoice.getId().toString(),
                                 "包年套餐（包年数）",
                                 "每月200GB流量",
                                 Integer.valueOf(chargeAmount),
@@ -69,9 +95,9 @@ public class FinanceController {
                         }
                     case "month":
                         response = helper.SetExpressCheckout(
-                                "http://"+ip+routes.FinanceController.confirmPaypalCheckout(),
-                                "http://"+ip+routes.FinanceController.cancelPaypalCheckout(),
-                                "XXX",
+                                "http://"+ip+ this.confirmPayPalCheckout(),
+                                "http://"+ip+ this.cancelPayPalCheckout(),
+                                invoice.getId().toString(),
                                 "包月套餐（包月数）",
                                 "每月100GB流量",
                                 Integer.valueOf(chargeAmount),
@@ -88,25 +114,39 @@ public class FinanceController {
                         }
                     case "usage":
                         response = helper.SetExpressCheckout(
-                                "http://"+ip+routes.FinanceController.confirmPaypalCheckout(),
-                                "http://"+ip+routes.FinanceController.cancelPaypalCheckout(),
-                                "XXX",
+                                "http://"+ip+ this.confirmPayPalCheckout(),
+                                "http://"+ip+ this.cancelPayPalCheckout(),
+                                invoice.getId().toString(),
                                 "流量套餐（GB）",
                                 "总套餐流量，一年期",
                                 Integer.valueOf(chargeAmount),
                                 ChargePolicy.getChargeUnitPrice(chargeType,Integer.valueOf(chargeAmount),"USD"),
                                 "Hello Ketty!"
                         );
-                        if(response != null & response.get("ACK").equals("Success"))
-                        {
-                            session("token",response.get("TOKEN"));
-                            return redirect(helper.getPayPalAddr()+"/cgi-bin/webscr?cmd=_express-checkout&token="+response.get("TOKEN"));
-                        }
-                        else{
-                            return status(401,response.toString());
-                        }
                 }
-                return status(401,"Invalid charging request!");
+                if(null != response)
+                {
+                    invoice.setLastACK(response.get("ACK"));
+                    invoice.setVERSION(response.get("VERSION"));
+                    invoice.setTIMESTAMP_0(response.get("TIMESTAMP"));
+                    invoice.setRAW_RESPONSE_0(response.toString());
+                    em.persist(invoice);
+
+                    if(response.get("ACK").equals("Success"))
+                    {
+                        invoice.setTOKEN(response.get("TOKEN"));
+                        em.persist(invoice);
+                        return redirect(helper.getPayPalAddr()+"/cgi-bin/webscr?cmd=_express-checkout&token="+response.get("TOKEN"));
+                    }
+                    else{
+                        return status(401,response.toString());
+                    }
+                }
+                else {
+                    invoice.setLastACK(response.get("NoneResponse"));
+                    em.persist(invoice);
+                    return status(401,"None response encountered");
+                }
             }
             else {
                 return status(401,"Invalid charging request!");
@@ -114,7 +154,6 @@ public class FinanceController {
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
-
         return status(401,"Unknown status!");
     }
 

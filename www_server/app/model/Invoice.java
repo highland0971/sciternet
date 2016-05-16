@@ -21,20 +21,81 @@ public abstract class Invoice {
     private UUID id;
 
     @Enumerated(EnumType.STRING)
+    private
     PAYMENT_GATEWAY paymentGateway;
 
     @ManyToOne
+    private
     User paiedUser;
 
-    String promotionCode;
+    private String promotionCode;
 
-    private int invoice_date;
+    private long invoice_date;
 
     private double payment_amount;
 
-    @Enumerated(EnumType.STRING)
-    AUDIT_TYPE contract_type;
+    private String contract_type;
 
-    Integer contract_amount;
+    private Integer contract_amount;
 
+    public UUID getId() {
+        return id;
+    }
+
+    public PAYMENT_GATEWAY getPaymentGateway() {
+        return paymentGateway;
+    }
+
+    public void setPaymentGateway(PAYMENT_GATEWAY paymentGateway) {
+        this.paymentGateway = paymentGateway;
+    }
+
+    public User getPaiedUser() {
+        return paiedUser;
+    }
+
+    public void setPaiedUser(User paiedUser) {
+        this.paiedUser = paiedUser;
+    }
+
+    public String getPromotionCode() {
+        return promotionCode;
+    }
+
+    public void setPromotionCode(String promotionCode) {
+        this.promotionCode = promotionCode;
+    }
+
+    public long getInvoice_date() {
+        return invoice_date;
+    }
+
+    public void setInvoice_date(long invoice_date) {
+        this.invoice_date = invoice_date;
+    }
+
+    public double getPayment_amount() {
+        return payment_amount;
+    }
+
+    public void setPayment_amount(double payment_amount) {
+        this.payment_amount = payment_amount;
+    }
+
+
+    public Integer getContract_amount() {
+        return contract_amount;
+    }
+
+    public void setContract_amount(Integer contract_amount) {
+        this.contract_amount = contract_amount;
+    }
+
+    public String getContract_type() {
+        return contract_type;
+    }
+
+    public void setContract_type(String contract_type) {
+        this.contract_type = contract_type;
+    }
 }

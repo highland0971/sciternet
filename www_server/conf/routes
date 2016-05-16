@@ -24,9 +24,9 @@ GET     /chargePlan                 controllers.HomeController.chargePlanBrief
 
 POST     /paypalCheckout            controllers.FinanceController.PayPalCheckout
 
-GET     /confirmPaypalCheckout      controllers.FinanceController.confirmPaypalCheckout
+GET     /confirmPaypalCheckout      controllers.FinanceController.confirmPayPalCheckout
 
-GET     /cancelPaypalCheckout       controllers.FinanceController.cancelPaypalCheckout
+GET     /cancelPaypalCheckout       controllers.FinanceController.cancelPayPalCheckout
 
 
 # Map static resources from the /public folder to the /assets URL path
