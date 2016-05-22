@@ -118,10 +118,8 @@ public class HttpUtil {
             try {
                 for(String pairStr : getResponseStr().split("&"))
                 {
-
                         String decodedStr = URLDecoder.decode(pairStr,codec);
                         responsePair.put(decodedStr.split("=")[0],decodedStr.split("=")[1]);
-
                 }
                 return responsePair;
             } catch (UnsupportedEncodingException e) {

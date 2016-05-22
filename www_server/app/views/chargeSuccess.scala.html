@@ -1,0 +1,9 @@
+@(transactionId: String, transcationAmount: Double, contractType: String, contractAmount: Integer)
+
+@framework(null, true) {
+    <p>付款成功！</p>
+    <p>付款单据号：@transactionId</p>
+    <p>收款金额：@transcationAmount USD</p>
+    <p>合约类型：@contractType</p>
+    <p>合约数量：@contractAmount</p>
+}

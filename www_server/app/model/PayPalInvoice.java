@@ -78,6 +78,9 @@ public class PayPalInvoice extends Invoice{
 
     private String PAYMENTINFO_0_REASONCODE;
 
+    private Double PAYMENTINFO_0_AMT;
+
+
     public String getTOKEN() {
         return TOKEN;
     }
@@ -372,5 +375,13 @@ public class PayPalInvoice extends Invoice{
 
     public void setPAYMENTINFO_0_FEEAMT(Double PAYMENTINFO_0_FEEAMT) {
         this.PAYMENTINFO_0_FEEAMT = PAYMENTINFO_0_FEEAMT;
+    }
+
+    public Double getPAYMENTINFO_0_AMT() {
+        return PAYMENTINFO_0_AMT;
+    }
+
+    public void setPAYMENTINFO_0_AMT(Double PAYMENTINFO_0_AMT) {
+        this.PAYMENTINFO_0_AMT = PAYMENTINFO_0_AMT;
     }
 }

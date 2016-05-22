@@ -9,14 +9,12 @@ import java.util.Map;
 
 public class PayPalExpressCheckoutHelper {
 
-    private String trialEndPoint = "https://api-3t.sandbox.paypal.com/nvp";
-    private String liveEndPoint = "https://api-3t.paypal.com/nvp";
-
-    private String sandPayPalAddr = "https://www.sandbox.paypal.com";
-    private String livePayPalAddr = "https://www.paypal.com";
-
     static private String codec = "UTF-8";
     static private String brandName = "Sciternet Tech Ltd.,Co.";
+    private String trialEndPoint = "https://api-3t.sandbox.paypal.com/nvp";
+    private String liveEndPoint = "https://api-3t.paypal.com/nvp";
+    private String sandPayPalAddr = "https://www.sandbox.paypal.com";
+    private String livePayPalAddr = "https://www.paypal.com";
     private String API_VERSION = "124";
 
     private String endPoint;
@@ -78,7 +76,7 @@ public class PayPalExpressCheckoutHelper {
         return response;
     }
 
-    public Map<String,String> GetExpressCheckoutDetails(String token, String invNum)
+    public Map<String, String> GetExpressCheckoutDetails(String token)
     {
         HttpUtil helper = new HttpUtil(endPoint,codec);
         helper.setupConnection("POST");

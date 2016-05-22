@@ -16,6 +16,7 @@ public class TimeUtil {
          * Return the proleptic Gregorian ordinal of the date, where January 1 of year 1 has ordinal 1.
          * Like Python date.toordinal().
          */
+        //TODO need check coordinates with python toordinal func
         return past.until(target, ChronoUnit.DAYS);
     }
 
