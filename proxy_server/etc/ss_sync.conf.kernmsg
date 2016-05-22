@@ -1,0 +1,32 @@
+[MainServer]
+ipaddr = 104.129.0.243
+
+[LocalServer]
+socketpath = /tmp/ss_manager.socket
+pingport = 60323
+logreadcmd = cat /proc/kmsg
+
+[8390]
+lasttimestamp = 1453885806.07
+lastdatausage = 261
+alive = False
+token = xxxedw3
+
+[9000]
+lasttimestamp = 1463795715.12
+lastdatausage = 0
+alive = False
+token = gxxuessme
+
+[9001]
+lasttimestamp = 1463886304.98
+lastdatausage = 7634
+alive = False
+token = zhaotao
+
+[9002]
+lasttimestamp = 1463901310.76
+lastdatausage = 16600
+alive = False
+token = tryMe
+
