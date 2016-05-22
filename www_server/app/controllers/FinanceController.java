@@ -178,62 +178,59 @@ public class FinanceController {
                 invoice.setContract_type(chargeType);
                 invoice.setInvoice_date(TimeUtil.toOrdinal(LocalDate.now()));
                 invoice.setPaymentGateway(PAYMENT_GATEWAY.PAYPAL);
+
+                System.out.println("First em.persist(invoice);");
                 em.persist(invoice);
 
+                String chargeName = null;
+                String chargeDesc = null;
+                Integer chargeQuantity = null;
+                Double chargePrice = null;
                 switch (chargeType)
                 {
                     case "year":
-                        response = helper.SetExpressCheckout(
-                                "http://"+ip+ ":"+ cfg.getString("http.port")+routes.FinanceController.confirmPayPalCheckout(),
-                                "http://"+ip+ ":"+ cfg.getString("http.port")+ routes.FinanceController.cancelPayPalCheckout(),
-                                invoice.getId().toString(),
-                                "包年套餐（包年数）",
-                                "每月200GB流量",
-                                Integer.valueOf(chargeAmount),
-                                ChargePolicy.getChargeUnitPrice(chargeType,Integer.valueOf(chargeAmount),"USD"),
-                                "Hello Ketty!"
-                        );
-                        invoice.setLastMETHOD(PAYPAL_METHOD.SetExpressCheckout);
+                        chargeName = "包年套餐（包年数）";
+                        chargeDesc = "每月200GB流量";
                         break;
                     case "month":
-                        response = helper.SetExpressCheckout(
-                                "http://"+ip+ ":"+ cfg.getString("http.port")+ routes.FinanceController.confirmPayPalCheckout(),
-                                "http://"+ip+ ":"+ cfg.getString("http.port")+ routes.FinanceController.cancelPayPalCheckout(),
-                                invoice.getId().toString(),
-                                "包月套餐（包月数）",
-                                "每月100GB流量",
-                                Integer.valueOf(chargeAmount),
-                                ChargePolicy.getChargeUnitPrice(chargeType,Integer.valueOf(chargeAmount),"USD"),
-                                "Hello Ketty!"
-                        );
-                        invoice.setLastMETHOD(PAYPAL_METHOD.SetExpressCheckout);
+                        chargeName = "包月套餐（包月数）";
+                        chargeDesc = "每月100GB流量";
                         break;
                     case "usage":
-                        response = helper.SetExpressCheckout(
-                                "http://"+ip+ ":"+ cfg.getString("http.port")+ routes.FinanceController.confirmPayPalCheckout(),
-                                "http://"+ip+ ":"+ cfg.getString("http.port")+ routes.FinanceController.cancelPayPalCheckout(),
-                                invoice.getId().toString(),
-                                "流量套餐（GB）",
-                                "总套餐流量，一年期",
-                                Integer.valueOf(chargeAmount),
-                                ChargePolicy.getChargeUnitPrice(chargeType,Integer.valueOf(chargeAmount),"USD"),
-                                "Hello Ketty!"
-                        );
-                        invoice.setLastMETHOD(PAYPAL_METHOD.SetExpressCheckout);
+                        chargeName = "流量套餐（GB）";
+                        chargeDesc = "总套餐流量，一年期";
                         break;
+                }
+                if (chargeName != null) {
+                    System.out.println("invoice.setLastMETHOD(PAYPAL_METHOD.SetExpressCheckout);");
+                    invoice.setLastMETHOD(PAYPAL_METHOD.SetExpressCheckout);
+
+                    response = helper.SetExpressCheckout(
+                            "http://" + ip + ":" + cfg.getString("http.port") + routes.FinanceController.confirmPayPalCheckout(),
+                            "http://" + ip + ":" + cfg.getString("http.port") + routes.FinanceController.cancelPayPalCheckout(),
+                            invoice.getId().toString(),
+                            chargeName,
+                            chargeDesc,
+                            Integer.valueOf(chargeAmount),
+                            ChargePolicy.getChargeUnitPrice(chargeType, Integer.valueOf(chargeAmount), "USD"),
+                            "Demo test"
+                    );
                 }
                 if(null != response)
                 {
+                    System.out.println("invoice.setLastACK(response.get(\"ACK\"));");
                     invoice.setLastACK(response.get("ACK"));
                     invoice.setVERSION(response.get("VERSION"));
                     invoice.setTIMESTAMP_0(response.get("TIMESTAMP"));
                     invoice.setRAW_RESPONSE_0(response.toString());
+                    System.out.println("second em.persist(invoice);");
                     em.persist(invoice);
 
                     if(response.get("ACK").equals("Success"))
                     {
                         invoice.setCORRELATIONID_0(response.get("CORRELATIONID"));
                         invoice.setTOKEN(response.get("TOKEN"));
+                        System.out.println("third em.persist(invoice);");
                         em.persist(invoice);
                         return redirect(helper.getPayPalAddr()+"/cgi-bin/webscr?cmd=_express-checkout&token="+response.get("TOKEN"));
                     }
