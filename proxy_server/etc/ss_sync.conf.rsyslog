@@ -1,0 +1,26 @@
+[MainServer]
+ipaddr = 104.129.0.243
+
+[LocalServer]
+socketpath = /tmp/ss_manager.socket
+pingport = 60323
+logreadcmd = tail -f /var/log/ss_sync.watchdog
+
+[8389]
+lasttimestamp = 1463889613.87
+lastdatausage = 3028
+alive = False
+token = gxxuessme
+
+[8388]
+lasttimestamp = 1458741422.17
+lastdatausage = 0
+alive = False
+token = zhaotao
+
+[9000]
+lasttimestamp = 1463816106.99
+lastdatausage = 0
+alive = False
+token = shitou
+
