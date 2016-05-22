@@ -228,6 +228,7 @@ public class FinanceController {
 
                     if(response.get("ACK").equals("Success"))
                     {
+                        System.out.println("invoice.setCORRELATIONID_0(response.get(\"CORRELATIONID\"));");
                         invoice.setCORRELATIONID_0(response.get("CORRELATIONID"));
                         invoice.setTOKEN(response.get("TOKEN"));
 //                        System.out.println("third em.persist(invoice);");
