@@ -223,15 +223,15 @@ public class FinanceController {
                     invoice.setVERSION(response.get("VERSION"));
                     invoice.setTIMESTAMP_0(response.get("TIMESTAMP"));
                     invoice.setRAW_RESPONSE_0(response.toString());
-                    System.out.println("second em.persist(invoice);");
-                    em.persist(invoice);
+//                    System.out.println("second em.persist(invoice);");
+//                    em.persist(invoice);
 
                     if(response.get("ACK").equals("Success"))
                     {
                         invoice.setCORRELATIONID_0(response.get("CORRELATIONID"));
                         invoice.setTOKEN(response.get("TOKEN"));
-                        System.out.println("third em.persist(invoice);");
-                        em.persist(invoice);
+//                        System.out.println("third em.persist(invoice);");
+//                        em.persist(invoice);
                         return redirect(helper.getPayPalAddr()+"/cgi-bin/webscr?cmd=_express-checkout&token="+response.get("TOKEN"));
                     }
                     else{
@@ -240,7 +240,7 @@ public class FinanceController {
                 }
                 else {
                     invoice.setLastACK(response.get("NonResponse"));
-                    em.persist(invoice);
+//                    em.persist(invoice);
                     return status(401,"None response encountered");
                 }
             }
