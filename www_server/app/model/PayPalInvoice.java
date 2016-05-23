@@ -1,5 +1,6 @@
 package model;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -34,18 +35,22 @@ public class PayPalInvoice extends Invoice{
 
     private String CORRELATIONID_0;
     private String TIMESTAMP_0;
+    @Column(length = 2000)
     private String RAW_RESPONSE_0;
 
     private String CORRELATIONID_1;
     private String TIMESTAMP_1;
+    @Column(length = 2000)
     private String RAW_RESPONSE_1;
 
     private String CORRELATIONID_2;
     private String TIMESTAMP_2;
+    @Column(length = 2000)
     private String RAW_RESPONSE_2;
 
     private String CORRELATIONID_3;
     private String TIMESTAMP_3;
+    @Column(length = 2000)
     private String RAW_RESPONSE_3;
 
     private Double PAYMENTREQUEST_0_AMT;

@@ -1,15 +1,14 @@
 package model;
 
 import javax.persistence.*;
-import java.util.UUID;
 
 /**
  * Created by vivia on 2016/5/12.
  */
 
 @org.hibernate.annotations.GenericGenerator(
-        name = "uuid_generator",
-        strategy = "uuid2"
+        name = "id_generator",
+        strategy = "enhanced-sequence"
 )
 
 @Entity
@@ -17,8 +16,8 @@ import java.util.UUID;
 public abstract class Invoice {
 
     @Id
-    @GeneratedValue(generator = "uuid_generator")
-    private UUID id;
+    @GeneratedValue(generator = "id_generator")
+    private Long id;
 
     @Enumerated(EnumType.STRING)
     private
@@ -38,7 +37,7 @@ public abstract class Invoice {
 
     private Integer contract_amount;
 
-    public UUID getId() {
+    public Long getId() {
         return id;
     }
 

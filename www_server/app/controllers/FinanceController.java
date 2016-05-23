@@ -102,7 +102,6 @@ public class FinanceController {
                         invoice.setL_PAYMENTREQUEST_0_DESC0(response.get("L_PAYMENTREQUEST_0_DESC0"));
                         invoice.setL_PAYMENTREQUEST_0_NAME0(response.get("L_PAYMENTREQUEST_0_NAME0"));
                         invoice.setLastMETHOD(PAYPAL_METHOD.DoExpressCheckoutPayment);
-                        em.persist(invoice);
 
                         Map<String, String> doResponse = helper.DoExpressCheckoutPayment(response.get("TOKEN"), response.get("PAYERID"), response.get("PAYMENTREQUEST_0_INVNUM"), Double.valueOf(response.get("PAYMENTREQUEST_0_AMT")));
                         if (doResponse != null) {
@@ -120,7 +119,7 @@ public class FinanceController {
                                 invoice.setPAYMENTINFO_0_SECUREMERCHANTACCOUNTID(doResponse.get("PAYMENTINFO_0_SECUREMERCHANTACCOUNTID"));
                                 invoice.setPAYMENTINFO_0_PAYMENTSTATUS(doResponse.get("PAYMENTINFO_0_PAYMENTSTATUS"));
                                 invoice.setPAYMENTINFO_0_REASONCODE(doResponse.get("PAYMENTINFO_0_REASONCODE"));
-                                em.persist(invoice);
+
                                 //TODO update user background charge config
                                 return ok(chargeSuccess.render(invoice.getPAYMENTINFO_0_TRANSACTIONID(),
                                         invoice.getPAYMENTINFO_0_AMT(), invoice.getContract_type(),
@@ -166,26 +165,21 @@ public class FinanceController {
             InetAddress addr = InetAddress.getLocalHost();
             String ip=addr.getHostAddress().toString();
             Map<String,String> response = null;
+            EntityManager em = jpaApi.em();
+            PayPalInvoice invoice = new PayPalInvoice();
             if(chargeType !=null && !chargeType.isEmpty() && chargeAmount!=null && Integer.valueOf(chargeAmount) > 0)
             {
-
-                EntityManager em = jpaApi.em();
-                PayPalInvoice invoice = new PayPalInvoice();
                 invoice.setPaiedUser(em.find(User.class, Long.valueOf(session("user_id"))));
-
                 System.out.println("Amount:" + chargeAmount);
                 invoice.setContract_amount(Integer.valueOf(chargeAmount));
                 invoice.setContract_type(chargeType);
                 invoice.setInvoice_date(TimeUtil.toOrdinal(LocalDate.now()));
                 invoice.setPaymentGateway(PAYMENT_GATEWAY.PAYPAL);
 
-                System.out.println("First em.persist(invoice);");
                 em.persist(invoice);
 
                 String chargeName = null;
                 String chargeDesc = null;
-                Integer chargeQuantity = null;
-                Double chargePrice = null;
                 switch (chargeType)
                 {
                     case "year":
@@ -218,21 +212,15 @@ public class FinanceController {
                 }
                 if(null != response)
                 {
-                    System.out.println("invoice.setLastACK(response.get(\"ACK\"));");
                     invoice.setLastACK(response.get("ACK"));
                     invoice.setVERSION(response.get("VERSION"));
                     invoice.setTIMESTAMP_0(response.get("TIMESTAMP"));
                     invoice.setRAW_RESPONSE_0(response.toString());
-//                    System.out.println("second em.persist(invoice);");
-//                    em.persist(invoice);
 
                     if(response.get("ACK").equals("Success"))
                     {
-                        System.out.println("invoice.setCORRELATIONID_0(response.get(\"CORRELATIONID\"));");
                         invoice.setCORRELATIONID_0(response.get("CORRELATIONID"));
                         invoice.setTOKEN(response.get("TOKEN"));
-//                        System.out.println("third em.persist(invoice);");
-//                        em.persist(invoice);
                         return redirect(helper.getPayPalAddr()+"/cgi-bin/webscr?cmd=_express-checkout&token="+response.get("TOKEN"));
                     }
                     else{
@@ -241,7 +229,6 @@ public class FinanceController {
                 }
                 else {
                     invoice.setLastACK(response.get("NonResponse"));
-//                    em.persist(invoice);
                     return status(401,"None response encountered");
                 }
             }
