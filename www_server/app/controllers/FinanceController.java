@@ -88,6 +88,7 @@ public class FinanceController {
                     invoice.setLastACK(response.get("ACK"));
                     invoice.setTIMESTAMP_1(response.get("TIMESTAMP"));
                     invoice.setRAW_RESPONSE_1(response.toString());
+                    System.out.println("ACK:" + response.get("ACK"));
                     if (response.get("ACK") == "Success") {
                         invoice.setCORRELATIONID_1(response.get("CORRELATIONID"));
 
@@ -107,6 +108,7 @@ public class FinanceController {
                         invoice.setLastMETHOD(PAYPAL_METHOD.DoExpressCheckoutPayment);
 
                         Map<String, String> doResponse = helper.DoExpressCheckoutPayment(response.get("TOKEN"), response.get("PAYERID"), response.get("PAYMENTREQUEST_0_INVNUM"), Double.valueOf(response.get("PAYMENTREQUEST_0_AMT")));
+                        System.out.println(doResponse.toString());
                         if (doResponse != null) {
                             invoice.setLastACK(doResponse.get("ACK"));
                             invoice.setTIMESTAMP_2(doResponse.get("TIMESTAMP"));
