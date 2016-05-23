@@ -84,7 +84,7 @@ public class PayPalExpressCheckoutHelper {
         helper.feedPayload("USER",user);
         helper.feedPayload("PWD",password);
         helper.feedPayload("SIGNATURE",signature);
-        helper.feedPayload("METHOD","SetExpressCheckout");
+        helper.feedPayload("METHOD", "GetExpressCheckoutDetails");
         helper.feedPayload("VERSION",API_VERSION);
         helper.feedPayload("TOKEN",token);
 
