@@ -52,7 +52,9 @@ public class FinanceController {
             return status(401, "Invalid access!");
 
         DynamicForm requestData = formFactory.form().bindFromRequest();
-        String token = requestData.get("TOKEN");
+        String token = requestData.get("token");
+
+        System.out.println("PayPal checkout confirmed with token:" + token);
 
         String failureMessage = "";
 
