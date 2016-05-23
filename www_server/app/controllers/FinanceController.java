@@ -113,7 +113,7 @@ public class FinanceController {
                             invoice.setLastACK(doResponse.get("ACK"));
                             invoice.setTIMESTAMP_2(doResponse.get("TIMESTAMP"));
                             invoice.setRAW_RESPONSE_2(doResponse.toString());
-                            if (doResponse.get("ACK").equals("Success") && doResponse.get("PAYMENTINFO_0_PAYMENTSTATUS") == "Completed") {
+                            if (doResponse.get("ACK").equals("Success") && doResponse.get("PAYMENTINFO_0_PAYMENTSTATUS").equals("Completed")) {
                                 invoice.setCORRELATIONID_2(doResponse.get("CORRELATIONID"));
                                 invoice.setPAYMENTINFO_0_ACK(doResponse.get("PAYMENTINFO_0_ACK"));
                                 invoice.setPAYMENTINFO_0_TRANSACTIONTYPE(doResponse.get("PAYMENTINFO_0_TRANSACTIONTYPE"));

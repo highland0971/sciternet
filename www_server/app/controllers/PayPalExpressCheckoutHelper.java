@@ -1,5 +1,6 @@
 package controllers;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 /**
@@ -65,7 +66,9 @@ public class PayPalExpressCheckoutHelper {
         helper.feedPayload("PAYMENTREQUEST_0_PAYMENTREASON","None");
 
         helper.feedPayload("PAYMENTREQUEST_0_INVNUM",invNum);
-        helper.feedPayload("PAYMENTREQUEST_0_AMT",String.valueOf(stuffPrice*stuffQuantity));
+
+        BigDecimal amt = new BigDecimal(stuffPrice * stuffQuantity);
+        helper.feedPayload("PAYMENTREQUEST_0_AMT", String.valueOf(amt.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue()));
 
         helper.feedPayload("L_PAYMENTREQUEST_0_NAME0",stuffName);
         helper.feedPayload("L_PAYMENTREQUEST_0_DESC0",stuffDesc);
