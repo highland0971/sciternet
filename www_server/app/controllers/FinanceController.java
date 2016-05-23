@@ -116,6 +116,7 @@ public class FinanceController {
                             if (doResponse.get("ACK").equals("Success") && doResponse.get("PAYMENTINFO_0_PAYMENTSTATUS").equals("Completed")) {
                                 invoice.setCORRELATIONID_2(doResponse.get("CORRELATIONID"));
                                 invoice.setPAYMENTINFO_0_ACK(doResponse.get("PAYMENTINFO_0_ACK"));
+                                invoice.setPAYMENTINFO_0_AMT(Double.valueOf(doResponse.get("PAYMENTINFO_0_AMT")));
                                 invoice.setPAYMENTINFO_0_TRANSACTIONTYPE(doResponse.get("PAYMENTINFO_0_TRANSACTIONTYPE"));
                                 invoice.setPAYMENTINFO_0_FEEAMT(Double.valueOf(doResponse.get("PAYMENTINFO_0_FEEAMT")));
                                 invoice.setPAYMENTINFO_0_PAYMENTTYPE(doResponse.get("PAYMENTINFO_0_PAYMENTTYPE"));
@@ -126,8 +127,10 @@ public class FinanceController {
                                 invoice.setPAYMENTINFO_0_REASONCODE(doResponse.get("PAYMENTINFO_0_REASONCODE"));
 
                                 //TODO update user background charge config
-                                return ok(chargeSuccess.render(invoice.getPAYMENTINFO_0_TRANSACTIONID(),
-                                        invoice.getPAYMENTINFO_0_AMT(), invoice.getContract_type(),
+                                return ok(chargeSuccess.render(
+                                        invoice.getPAYMENTINFO_0_TRANSACTIONID(),
+                                        invoice.getPAYMENTINFO_0_AMT(),
+                                        invoice.getContract_type(),
                                         invoice.getContract_amount()));
                             } else {
                                 failureMessage = "DoExpressCheckoutPayment return non-success info";
