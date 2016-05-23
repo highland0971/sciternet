@@ -45,6 +45,7 @@ public class FinanceController {
         return ok(requestData.data().toString());
     }
 
+    @Transactional
     public Result confirmPayPalCheckout() {
 
         //TODO change Result into promised result async
