@@ -49,6 +49,9 @@ public class User implements Serializable {
     @OneToOne(fetch = FetchType.LAZY,cascade = CascadeType.PERSIST,mappedBy = "dedicatedUser")
     private ProxyServer dedicateServer;
 
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST, mappedBy = "paiedUser")
+    private Invoice invoices;
+
 
     public long getUser_id() {
         return user_id;
