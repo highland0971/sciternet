@@ -52,7 +52,7 @@ public class FinanceController {
                 User user = invoice.getPaiedUser();
                 if (invoice.getContract_type().equals("year")) {
                     Long targetExpireDate = TimeUtil.toOrdinal(LocalDate.now().plusYears(invoice.getContract_amount()));
-                    if (user.getContract_type() == AUDIT_TYPE.period) {
+                    if (user.getAudit_type() == AUDIT_TYPE.period) {
                         if (user.getCredit_data_gb() == invoice.getAffiliate_limit()) {
                             if (user.getExpire_date() > TimeUtil.toOrdinal(LocalDate.now()))
                                 targetExpireDate = user.getExpire_date() + 365 * invoice.getContract_amount();
@@ -68,12 +68,12 @@ public class FinanceController {
                     } else if (forceActivation) {
                         user.setExpire_date(targetExpireDate);
                         user.setCredit_data_gb(invoice.getAffiliate_limit());
-                        user.setContract_type(AUDIT_TYPE.period);
+                        user.setAudit_type(AUDIT_TYPE.period);
                         invoice.setActivated(true);
                     }
                 } else if (invoice.getContract_type().equals("month")) {
                     Long targetExpireDate = TimeUtil.toOrdinal(LocalDate.now().plusMonths(invoice.getContract_amount()));
-                    if (user.getContract_type() == AUDIT_TYPE.period) {
+                    if (user.getAudit_type() == AUDIT_TYPE.period) {
                         if (user.getCredit_data_gb() == invoice.getAffiliate_limit()) {
                             if (user.getExpire_date() > TimeUtil.toOrdinal(LocalDate.now()))
                                 targetExpireDate = TimeUtil.toOrdinal(TimeUtil.fromOrdinal(user.getExpire_date()).plusMonths(invoice.getContract_amount()));
@@ -89,12 +89,12 @@ public class FinanceController {
                     } else if (forceActivation) {
                         user.setExpire_date(targetExpireDate);
                         user.setCredit_data_gb(invoice.getAffiliate_limit());
-                        user.setContract_type(AUDIT_TYPE.period);
+                        user.setAudit_type(AUDIT_TYPE.period);
                         invoice.setActivated(true);
                         return true;
                     }
                 } else if (invoice.getContract_type().equals("usage")) {
-                    if (user.getContract_type() == AUDIT_TYPE.usage_duration) {
+                    if (user.getAudit_type() == AUDIT_TYPE.usage_duration) {
                         user.setCredit_data_gb(user.getCredit_data_gb() + invoice.getContract_amount());
                         user.setExpire_date(TimeUtil.toOrdinal(LocalDate.now().plusMonths(invoice.getAffiliate_limit())));
                         invoice.setActivated(true);
@@ -102,7 +102,7 @@ public class FinanceController {
                     } else if (forceActivation) {
                         user.setCredit_data_gb(user.getCredit_data_gb() + invoice.getContract_amount());
                         user.setExpire_date(TimeUtil.toOrdinal(LocalDate.now().plusMonths(invoice.getAffiliate_limit())));
-                        user.setContract_type(AUDIT_TYPE.usage_duration);
+                        user.setAudit_type(AUDIT_TYPE.usage_duration);
                         invoice.setActivated(true);
                         return true;
                     }

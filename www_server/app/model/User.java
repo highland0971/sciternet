@@ -34,8 +34,8 @@ public class User implements Serializable {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 64, name = "contract_type")
-    private AUDIT_TYPE contract_type;
+    @Column(nullable = false, length = 64, name = "payment_type")
+    private AUDIT_TYPE audit_type;
 
     @Column(nullable = false)
     private int credit_data_gb = 0;
@@ -90,12 +90,12 @@ public class User implements Serializable {
         this.reg_data = reg_data;
     }
 
-    public AUDIT_TYPE getContract_type() {
-        return contract_type;
+    public AUDIT_TYPE getAudit_type() {
+        return audit_type;
     }
 
-    public void setContract_type(AUDIT_TYPE contract_type) {
-        this.contract_type = contract_type;
+    public void setAudit_type(AUDIT_TYPE audit_type) {
+        this.audit_type = audit_type;
     }
 
     public int getCredit_data_gb() {
