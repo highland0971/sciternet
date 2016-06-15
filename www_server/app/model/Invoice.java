@@ -37,6 +37,12 @@ public abstract class Invoice {
 
     private Integer contract_amount;
 
+    private Integer affiliate_limit;
+
+    private boolean activated;
+
+    private boolean isValid;
+
     public Long getId() {
         return id;
     }
@@ -96,5 +102,29 @@ public abstract class Invoice {
 
     public void setContract_type(String contract_type) {
         this.contract_type = contract_type;
+    }
+
+    public boolean isActivated() {
+        return activated;
+    }
+
+    public void setActivated(boolean activated) {
+        this.activated = activated;
+    }
+
+    public boolean isValid() {
+        return isValid;
+    }
+
+    public void setValid(boolean valid) {
+        isValid = valid;
+    }
+
+    public Integer getAffiliate_limit() {
+        return affiliate_limit;
+    }
+
+    public void setAffiliate_limit(Integer affiliate_limit) {
+        this.affiliate_limit = affiliate_limit;
     }
 }

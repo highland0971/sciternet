@@ -1,4 +1,4 @@
-@(transactionId: String, transcationAmount: Double, contractType: String, contractAmount: Integer)
+@(transactionId: String, transcationAmount: Double, contractType: String, contractAmount: Integer, activation: Boolean)
 
 @framework(null, true) {
     <p>付款成功！</p>
@@ -6,4 +6,9 @@
     <p>收款金额：@transcationAmount USD</p>
     <p>合约类型：@contractType</p>
     <p>合约数量：@contractAmount</p>
+    <p>激活状态：@if(activation) {
+        已激活
+    } else {
+        未激活
+    }</p>
 }

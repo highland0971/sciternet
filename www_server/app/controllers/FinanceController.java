@@ -1,9 +1,6 @@
 package controllers;
 
-import model.PAYMENT_GATEWAY;
-import model.PAYPAL_METHOD;
-import model.PayPalInvoice;
-import model.User;
+import model.*;
 import play.Configuration;
 import play.data.DynamicForm;
 import play.data.FormFactory;
@@ -46,6 +43,76 @@ public class FinanceController {
     }
 
     @Transactional
+    public boolean chargePlanActivation(Long invoiceId, boolean forceActivation) {
+        //TODO change invoice activation status to activated
+        if (invoiceId != null && invoiceId > 0) {
+            EntityManager em = jpaApi.em();
+            Invoice invoice = em.find(Invoice.class, invoiceId);
+            if (invoice != null && invoice.isValid()) {
+                User user = invoice.getPaiedUser();
+                if (invoice.getContract_type().equals("year")) {
+                    Long targetExpireDate = TimeUtil.toOrdinal(LocalDate.now().plusYears(invoice.getContract_amount()));
+                    if (user.getContract_type() == AUDIT_TYPE.period) {
+                        if (user.getCredit_data_gb() == invoice.getAffiliate_limit()) {
+                            if (user.getExpire_date() > TimeUtil.toOrdinal(LocalDate.now()))
+                                targetExpireDate = user.getExpire_date() + 365 * invoice.getContract_amount();
+                            user.setExpire_date(targetExpireDate);
+                            invoice.setActivated(true);
+                            return true;
+                        } else if (forceActivation) {
+                            user.setExpire_date(targetExpireDate);
+                            user.setCredit_data_gb(invoice.getAffiliate_limit());
+                            invoice.setActivated(true);
+                            return true;
+                        }
+                    } else if (forceActivation) {
+                        user.setExpire_date(targetExpireDate);
+                        user.setCredit_data_gb(invoice.getAffiliate_limit());
+                        user.setContract_type(AUDIT_TYPE.period);
+                        invoice.setActivated(true);
+                    }
+                } else if (invoice.getContract_type().equals("month")) {
+                    Long targetExpireDate = TimeUtil.toOrdinal(LocalDate.now().plusMonths(invoice.getContract_amount()));
+                    if (user.getContract_type() == AUDIT_TYPE.period) {
+                        if (user.getCredit_data_gb() == invoice.getAffiliate_limit()) {
+                            if (user.getExpire_date() > TimeUtil.toOrdinal(LocalDate.now()))
+                                targetExpireDate = TimeUtil.toOrdinal(TimeUtil.fromOrdinal(user.getExpire_date()).plusMonths(invoice.getContract_amount()));
+                            user.setExpire_date(targetExpireDate);
+                            invoice.setActivated(true);
+                            return true;
+                        } else if (forceActivation) {
+                            user.setExpire_date(targetExpireDate);
+                            user.setCredit_data_gb(invoice.getAffiliate_limit());
+                            invoice.setActivated(true);
+                            return true;
+                        }
+                    } else if (forceActivation) {
+                        user.setExpire_date(targetExpireDate);
+                        user.setCredit_data_gb(invoice.getAffiliate_limit());
+                        user.setContract_type(AUDIT_TYPE.period);
+                        invoice.setActivated(true);
+                        return true;
+                    }
+                } else if (invoice.getContract_type().equals("usage")) {
+                    if (user.getContract_type() == AUDIT_TYPE.usage_duration) {
+                        user.setCredit_data_gb(user.getCredit_data_gb() + invoice.getContract_amount());
+                        user.setExpire_date(TimeUtil.toOrdinal(LocalDate.now().plusMonths(invoice.getAffiliate_limit())));
+                        invoice.setActivated(true);
+                        return true;
+                    } else if (forceActivation) {
+                        user.setCredit_data_gb(user.getCredit_data_gb() + invoice.getContract_amount());
+                        user.setExpire_date(TimeUtil.toOrdinal(LocalDate.now().plusMonths(invoice.getAffiliate_limit())));
+                        user.setContract_type(AUDIT_TYPE.usage_duration);
+                        invoice.setActivated(true);
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    @Transactional
     public Result confirmPayPalCheckout() {
 
         //TODO change Result into promised result async
@@ -68,7 +135,6 @@ public class FinanceController {
             criteria.select(i).where(cb.equal(i.get("TOKEN"), pToken));
             TypedQuery<PayPalInvoice> query = em.createQuery(criteria);
             query.setParameter(pToken, token);
-
             try {
                 PayPalInvoice invoice = query.getSingleResult();
                 Configuration cfg = Configuration.root();
@@ -78,12 +144,12 @@ public class FinanceController {
                         cfg.getString("paypal.pwd"),
                         cfg.getString("paypal.signature"));
 
-                invoice.setLastMETHOD(PAYPAL_METHOD.GetExpressCheckoutDetails);
-                em.persist(invoice);
 
+//                em.persist(invoice);
+
+                invoice.setLastMETHOD(PAYPAL_METHOD.GetExpressCheckoutDetails);
                 Map<String, String> response = helper.GetExpressCheckoutDetails(token);
                 System.out.println(response.toString());
-
                 if (response != null) {
                     invoice.setLastACK(response.get("ACK"));
                     invoice.setTIMESTAMP_1(response.get("TIMESTAMP"));
@@ -105,8 +171,8 @@ public class FinanceController {
                         invoice.setL_PAYMENTREQUEST_0_QTY0(Integer.valueOf(response.get("L_PAYMENTREQUEST_0_QTY0")));
                         invoice.setL_PAYMENTREQUEST_0_DESC0(response.get("L_PAYMENTREQUEST_0_DESC0"));
                         invoice.setL_PAYMENTREQUEST_0_NAME0(response.get("L_PAYMENTREQUEST_0_NAME0"));
-                        invoice.setLastMETHOD(PAYPAL_METHOD.DoExpressCheckoutPayment);
 
+                        invoice.setLastMETHOD(PAYPAL_METHOD.DoExpressCheckoutPayment);
                         Map<String, String> doResponse = helper.DoExpressCheckoutPayment(response.get("TOKEN"), response.get("PAYERID"), response.get("PAYMENTREQUEST_0_INVNUM"), Double.valueOf(response.get("PAYMENTREQUEST_0_AMT")));
                         System.out.println(doResponse.toString());
                         if (doResponse != null) {
@@ -126,12 +192,15 @@ public class FinanceController {
                                 invoice.setPAYMENTINFO_0_PAYMENTSTATUS(doResponse.get("PAYMENTINFO_0_PAYMENTSTATUS"));
                                 invoice.setPAYMENTINFO_0_REASONCODE(doResponse.get("PAYMENTINFO_0_REASONCODE"));
 
-                                //TODO update user background charge config
+                                invoice.setValid(true);
+
+
                                 return ok(chargeSuccess.render(
                                         invoice.getPAYMENTINFO_0_TRANSACTIONID(),
                                         invoice.getPAYMENTINFO_0_AMT(),
                                         invoice.getContract_type(),
-                                        invoice.getContract_amount()));
+                                        invoice.getContract_amount(),
+                                        chargePlanActivation(invoice.getId(), false)));
                             } else {
                                 failureMessage = "DoExpressCheckoutPayment return non-success info";
                             }
@@ -175,6 +244,7 @@ public class FinanceController {
             Map<String,String> response = null;
             EntityManager em = jpaApi.em();
             PayPalInvoice invoice = new PayPalInvoice();
+            invoice.setValid(false);
             if(chargeType !=null && !chargeType.isEmpty() && chargeAmount!=null && Integer.valueOf(chargeAmount) > 0)
             {
                 invoice.setPaiedUser(em.find(User.class, Long.valueOf(session("user_id"))));
@@ -193,14 +263,17 @@ public class FinanceController {
                     case "year":
                         chargeName = "包年套餐（包年数）";
                         chargeDesc = "每月200GB流量";
+                        invoice.setAffiliate_limit(200);
                         break;
                     case "month":
                         chargeName = "包月套餐（包月数）";
                         chargeDesc = "每月100GB流量";
+                        invoice.setAffiliate_limit(100);
                         break;
                     case "usage":
                         chargeName = "流量套餐（GB）";
                         chargeDesc = "总套餐流量，一年期";
+                        invoice.setAffiliate_limit(12);
                         break;
                 }
                 if (chargeName != null) {

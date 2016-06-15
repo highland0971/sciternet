@@ -54,7 +54,14 @@
                     <ul class="nav navbar-nav">
                         @if(isLogin) {
                             <li class="active" id="usageAccount"><a href="/usage_account">流量监控</a></li>
-                            <li><a href="/chargePlan" id="chargePlan">付费计划</a></li>
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                                    付费计划 <span class="caret"></span></a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="/chargePlan">套餐购买</a></li>
+                                    <li><a href="/invoiceHistory">消费记录</a></li>
+                                </ul>
+                            </li>
                             <li><a href="#">奖励计划</a></li>
                         }else{
                             <li class="dropdown">

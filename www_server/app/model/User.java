@@ -34,8 +34,8 @@ public class User implements Serializable {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false,length = 64)
-    private AUDIT_TYPE payment_type;
+    @Column(nullable = false, length = 64, name = "contract_type")
+    private AUDIT_TYPE contract_type;
 
     @Column(nullable = false)
     private int credit_data_gb = 0;
@@ -52,6 +52,10 @@ public class User implements Serializable {
 
     public long getUser_id() {
         return user_id;
+    }
+
+    public void setUser_id(long user_id) {
+        this.user_id = user_id;
     }
 
     public String getEmail() {
@@ -86,12 +90,12 @@ public class User implements Serializable {
         this.reg_data = reg_data;
     }
 
-    public AUDIT_TYPE getPayment_type() {
-        return payment_type;
+    public AUDIT_TYPE getContract_type() {
+        return contract_type;
     }
 
-    public void setPayment_type(AUDIT_TYPE payment_type) {
-        this.payment_type = payment_type;
+    public void setContract_type(AUDIT_TYPE contract_type) {
+        this.contract_type = contract_type;
     }
 
     public int getCredit_data_gb() {
@@ -116,10 +120,6 @@ public class User implements Serializable {
 
     public void setServer_type(ServerType server_type) {
         this.server_type = server_type;
-    }
-
-    public void setUser_id(long user_id) {
-        this.user_id = user_id;
     }
 
 
