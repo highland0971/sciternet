@@ -9,11 +9,14 @@ import getopt,sys
 import time
 import os
 import BaseHTTPServer
+import socket
 
 
 CONFIG_FILE="/etc/ss_sync.conf"
 LOG_FILE="/var/log/ss_sync.log"
 IFCONFIG='/sbin/ifconfig'
+IP='/sbin/ip'
+IPCMD="""addr show `ip route | grep -o 'default dev [[:alnum:]]*'| awk '{print $3}'` | grep global|awk '{print $2}'|awk -F "/" '{print $1}'"""
 IPTABLES='/sbin/iptables'
 IPTABLES_SAVE='/sbin/iptables-save'
 
@@ -50,6 +53,29 @@ class AutoConfigParser(ConfigParser.RawConfigParser):
 		else:
 			assert IOError,"No config file path to write"
 
+def unix_skt_send(cmd):
+	manager_socket_path = config.get('LocalServer','socketpath')
+	client_socket_path = "{}.{}".format(manager_socket_path,os.getpid())
+	if os.path.exists(client_socket_path):
+		os.remove(client_socket_path)
+
+	logger.debug('Connect to {} and bind to {}.'.format(manager_socket_path,client_socket_path))
+	try:
+		soc = socket.socket( socket.AF_UNIX, socket.SOCK_DGRAM )
+		soc.bind(client_socket_path)
+		soc.connect(manager_socket_path)
+		logger.debug('Connection setup success!')
+		logger.debug('Sending cmd:{}'.format(cmd))
+		soc.send(cmd)
+		resp = soc.recv(10000000)
+		logger.debug('Recv response:{}'.format(resp))
+		return resp
+	except:
+		logger.exception("Unexpected error found when send unix pkt {}".format(cmd))
+	finally:
+		soc.close()
+		os.remove(client_socket_path)
+
 def report_avail_port():
 	raw_result = subprocess.check_output('netstat -an|grep tcp',shell=True)
 	ports = re.findall('\d\.\d\.\d\.\d:(\d+)',raw_result)
@@ -69,8 +95,7 @@ def report_avail_port():
 		
 
 class SimpleHttpHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-
-        def do_GET(self):
+	def do_GET(self):
 		logger.debug('{} request url {}.'.format(self.command,self.path))
 		try:
 			if self.path == '/report_avail_port':
@@ -83,7 +108,7 @@ class SimpleHttpHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 				sync_ss_client()
 				self.send_response(200)
 				self.send_header("Content-type", "text/html")
-                                self.end_headers()
+				self.end_headers()
 				self.wfile.write(json.dumps('OK'))
 			else:
 				self.send_response(404)
@@ -111,7 +136,8 @@ def fetch_remote_clients_config():
 def gether_local_ss_client():
 	clients = {}
 	logger.debug('Gethering local ss client instance from api...')
-	raw_result = subprocess.check_output('echo "ping"|nc -Uu -q 1 {}'.format(config.get('LocalServer','socketpath')),shell=True)
+	raw_result = unix_skt_send("ping")
+	#raw_result = subprocess.check_output('echo "ping"|nc -Uu -q 1 {}'.format(config.get('LocalServer','socketpath')),shell=True)
 	raw_result = re.findall('[0-9]+:[0-9]+',raw_result.replace('"',''))
 	for item in raw_result:
 		port,count = item.split(':')
@@ -121,17 +147,17 @@ def gether_local_ss_client():
 
 def __get_port_usage(port):
 	clients = {}
-        logger.debug('Gethering port {} usage from api...'.format(port))
+	logger.debug('Gethering port {} usage from api...'.format(port))
 	try:
-		raw_result = subprocess.check_output('echo "ping"|nc -Uu -q 1 {}'.format(config.get('LocalServer','socketpath')),shell=True)
-        	raw_result = re.findall('[0-9]+:[0-9]+',raw_result.replace('"',''))
-        	for item in raw_result:
-                	dport,count = item.split(':')
+		raw_result = unix_skt_send("ping")
+		#raw_result = subprocess.check_output('echo "ping"|nc -Uu -q 1 {}'.format(config.get('LocalServer','socketpath')),shell=True)
+		raw_result = re.findall('[0-9]+:[0-9]+',raw_result.replace('"',''))
+		for item in raw_result:
+			dport,count = item.split(':')
 			if dport == port:
 				return count
 		else:
 			return None
-
 	except:
 		logger.exception('Unexpected error occured during get port usage from api')
 		return None
@@ -148,28 +174,28 @@ def gether_local_ss_client_from_ps():
 
 def iptable_port_monitor_setup(remote_cfg):
 	'''shall be called by cron'''
-        logger.debug('Gethering iptable moniter rule for local ss client')
-        inspect_rule = '{} -A INPUT -d {}/32 -p tcp -m tcp --dport {} -m limit --limit {}/{} --limit-burst {} -m comment --comment PORT_REQUEST_LOG -j LOG --log-prefix "PORT REQUEST " --log-level info'
+	logger.debug('Gethering iptable moniter rule for local ss client')
+	inspect_rule = '{} -A INPUT -d {}/32 -p tcp -m tcp --dport {} -m limit --limit {}/{} --limit-burst {} -m comment --comment PORT_REQUEST_LOG -j LOG --log-prefix "PORT REQUEST " --log-level info'
 
-        inspect_ports = []
+	inspect_ports = []
 	try:
-        	raw_result = subprocess.check_output("{}|grep 'PORT_REQUEST_LOG'".format(IPTABLES_SAVE),shell=True)
-                inspect_ports.extend(re.findall('--dport (\d+)',raw_result))
-        	logger.debug('Total {} port monitered, {}.'.format(len(inspect_ports),inspect_ports))
+		raw_result = subprocess.check_output("{}|grep 'PORT_REQUEST_LOG'".format(IPTABLES_SAVE),shell=True)
+		inspect_ports.extend(re.findall('--dport (\d+)',raw_result))
+		logger.debug('Total {} port monitered, {}.'.format(len(inspect_ports),inspect_ports))
 	except subprocess.CalledProcessError:
 		logger.debug("No iptables rule found for PORT_REQUEST_LOG")
-        if remote_cfg:
-                for port in remote_cfg:
-                        try:
-                                inspect_ports.index(port)
-                        except ValueError as ie:
-                                try:
-                                        subprocess.check_call(inspect_rule.format(IPTABLES,SERVER_IP,port,ALLOW_RECOVERY_PER_UNIT,TIMING_UNIT,ALLOW_PASS_PER_UNIT),shell=True)
-                                        logger.info('Port {} added to iptables inspect list.'.format(port))
-                                except subprocess.CalledProcessError,error:
-                                        logger.exception('Faild to insert inspect rule for port {}:{}'.format(port,error.cmd))
-        else:
-                logger.info('Empty client port config from remote')
+	if remote_cfg:
+		for port in remote_cfg:
+			try:
+				inspect_ports.index(port)
+			except ValueError as ie:
+				try:
+					subprocess.check_call(inspect_rule.format(IPTABLES,SERVER_IP,port,ALLOW_RECOVERY_PER_UNIT,TIMING_UNIT,ALLOW_PASS_PER_UNIT),shell=True)
+					logger.info('Port {} added to iptables inspect list.'.format(port))
+				except subprocess.CalledProcessError,error:
+					logger.exception('Faild to insert inspect rule for port {}:{}'.format(port,error.cmd))
+	else:
+		logger.info('Empty client port config from remote')
 
 def iptables_port_monitor_install(port):
 	inspect_rule = '{} -A INPUT -d {}/32 -p tcp -m tcp --dport {} -m limit --limit {}/{} --limit-burst {} -m comment --comment PORT_REQUEST_LOG -j LOG --log-prefix "PORT REQUEST " --log-level info'
@@ -201,16 +227,16 @@ def paging_port_monitor_install(port):
 	try:
 		logger.debug('Try setup paging port monitor.')
 		if port:
-	                exist_check = subprocess.check_output("{} -L INPUT --numeric --line-numbers|grep 'PAGING_REQUEST_LOG'|grep 'dpt:{}'".format(IPTABLES,port),shell=True)
-	                logger.debug('Paging port {} already monitored.'.format(port))
+			exist_check = subprocess.check_output("{} -L INPUT --numeric --line-numbers|grep 'PAGING_REQUEST_LOG'|grep 'dpt:{}'".format(IPTABLES,port),shell=True)
+			logger.debug('Paging port {} already monitored.'.format(port))
 		else:
 			logger.error('Paging port number not specificed.')
-        except subprocess.CalledProcessError,e:
-                try:
+	except subprocess.CalledProcessError,e:
+		try:
 			subprocess.check_call(inspect_rule.format(IPTABLES,SERVER_IP,port),shell=True)
 			logger.debug('Port {} added to paging monitor chain.'.format(port))
 		except subprocess.CalledProcessError,e:
-                        logger.exception('Faild to insert inspect rule for port {}:{}'.format(port,e.cmd))
+			logger.exception('Faild to insert inspect rule for port {}:{}'.format(port,e.cmd))
 	except:
 		logger.exception('Unexpected error occured during install iptables monitor rule for port {}.'.format(port))
 
@@ -226,20 +252,21 @@ def __port_shut_down(port):
 		logger.exception('Unexpected error occured during shutdown port {}.'.format(port))
 
 def __port_resetup(port):
-        try:
-                token = config.get(port,'token')
-                alive = config.getboolean(port,'alive')
-        except ConfigParser.NoSectionError:
-                logger.warn('Port {} not found in local config,resetup check failed.'.format(port))
-        except ConfigParser.NoOptionError:
-                logger.error('No token or alive tag found for port {},resetup check failed.'.format(port))
-        except:
-                logger.exception('Unexpected error found during querying port resetup config.')
-        cmd = "echo 'add: {\"server_port\":%s, \"password\":\"%s\"}' | nc -Uuq 1 %s"%(port,token,config.get('LocalServer','socketpath'))
-        if not alive:
+	try:
+		token = config.get(port,'token')
+		alive = config.getboolean(port,'alive')
+	except ConfigParser.NoSectionError:
+		logger.warn('Port {} not found in local config,resetup check failed.'.format(port))
+	except ConfigParser.NoOptionError:
+		logger.error('No token or alive tag found for port {},resetup check failed.'.format(port))
+	except:
+		logger.exception('Unexpected error found during querying port resetup config.')
+	#cmd = "echo 'add: {\"server_port\":%s, \"password\":\"%s\"}' | nc -Uuq 1 %s"%(port,token,config.get('LocalServer','socketpath'))
+	if not alive:
 		logger.debug('Trying reSetup port {}'.format(port))
-                try:
-                        subprocess.check_call(cmd,shell = True)
+		try:
+			raw_result = unix_skt_send('add: {\"server_port\":%s, \"password\":\"%s\"}'%(port,token))
+			#subprocess.check_call(cmd,shell = True)
 			clients = gether_local_ss_client_from_ps()
 			if clients.get(port,None):
 				logger.debug('Port {} restarted.'.format(port))
@@ -247,12 +274,12 @@ def __port_resetup(port):
 				config.commit()
 			else:
 				logger.warn('Port {} restart failed.'.format(port))
-                except subprocess.CalledProcessError,e:
+		except subprocess.CalledProcessError,e:
 			logger.error('Failed to restart port {}, with cmd :{}'.format(port,e.cmd))
-                except:
-                        logger.exception('Unexpected error occured during port {} resetup subprocess')
-        else:
-                logger.debug("Port {} reported its alive status.".format(port))
+		except:
+			logger.exception('Unexpected error occured during port {} resetup subprocess')
+	else:
+		logger.debug("Port {} reported its alive status.".format(port))
 
 def sync_ss_client():
 	try:
@@ -263,26 +290,28 @@ def sync_ss_client():
 		for port in remote_cfgs:
 			try:
 				logger.debug('Check local port {} existence.'.format(port))
-				cmd = "echo 'add: {\"server_port\":%s, \"password\":\"%s\"}' | nc -Uuq 1 %s"%(port,remote_cfgs[port]['token'],config.get('LocalServer','socketpath'))
+				#cmd = "echo 'add: {\"server_port\":%s, \"password\":\"%s\"}' | nc -Uuq 1 %s"%(port,remote_cfgs[port]['token'],config.get('LocalServer','socketpath'))
+				cmd = 'add: {\"server_port\":%s, \"password\":\"%s\"}' %(port,remote_cfgs[port]['token'])
 				if local_instances.get(port,None) == None: #BECAREFULL some client with 0 usage return will also pass if not local_instances.get(port,None) test
 					logger.debug('Port {} not found on local server'.format(port))
 					try:
 						if config.getboolean(port,'alive'):
 							'''Actually no client shall be setup here,in case unexpected error accured casused local config mis-sync with remote server'''
 							logger.debug("Starting MIS-SYNC local ss on port {}.".format(port))
-							subprocess.call(cmd,shell=True)
+							#subprocess.call(cmd,shell=True)
+							unix_skt_send(cmd)
 							config.set(port,'LastTimeStamp',time.time())
-                                			config.set(port,'LastDataUsage',0)
+							config.set(port,'LastDataUsage',0)
 							config.set(port,'token',remote_cfgs[port]['token'])
 						else:
 							logger.debug('Remote config for port {} found,but local activity tag is idle,setup escaped.'.format(port))
 					except ConfigParser.NoSectionError:
 						logger.debug("Adding new local ss client on port {}.".format(port))
-                                                subprocess.call(cmd,shell=True)
+						subprocess.call(cmd,shell=True)
 						config.add_section(port)
-		                                config.set(port,'LastTimeStamp',time.time())
-		                                config.set(port,'LastDataUsage',0)
-		                                config.set(port,'alive',True)
+						config.set(port,'LastTimeStamp',time.time())
+						config.set(port,'LastDataUsage',0)
+						config.set(port,'alive',True)
 						config.set(port,'token',remote_cfgs[port]['token'])
 					finally:
 						config.commit()
@@ -313,8 +342,10 @@ def sync_ss_client():
 				if not local_instances_ps.get(port,None):
 					logger.warn("Dead port {} found,try to reestablish".format(port))
 					__port_shut_down(port)
-					cmd = "echo 'add: {\"server_port\":%s, \"password\":\"%s\"}' | nc -Uuq 1 %s"%(port,remote_cfgs[port]['token'],config.get('LocalServer','socketpath'))
-					subprocess.call(cmd,shell=True)
+					#cmd = "echo 'add: {\"server_port\":%s, \"password\":\"%s\"}' | nc -Uuq 1 %s"%(port,remote_cfgs[port]['token'],config.get('LocalServer','socketpath'))
+					#subprocess.call(cmd,shell=True)
+					cmd = 'add: {\"server_port\":%s, \"password\":\"%s\"}' %(port,remote_cfgs[port]['token'])
+					unix_skt_send(cmd)
 					if not gether_local_ss_client_from_ps().get(port,None):
 						logger.error("Dead port {} reestablish failed.".format(port))
 
@@ -334,7 +365,7 @@ def report_ss_client_usage(port,usage):
 	logger.debug('Report client usage for port {} data {} to {}.'.format(port,usage,config.get('MainServer','ipaddr')))
 	try:
 		remote = urllib.urlopen(url)
-       		response = remote.read()
+		response = remote.read()
 		if response == 'OK':
 			return True
 		else:
@@ -353,19 +384,19 @@ def sync_client_usage():
 			logger.exception("Error occured on report usage of port {}.".format(port))
 
 def idle_port_proceed(deltaTime = 1800):
-        try:
+	try:
 		logger.debug('Idle port check started')
-                local_instances =  gether_local_ss_client()
-                currentTime = time.time()
-                for port in local_instances:
+		local_instances =  gether_local_ss_client()
+		currentTime = time.time()
+		for port in local_instances:
 			logger.debug('Port {} check'.format(port))
 			try:
-                        	lastTimestamp = config.getfloat(port,'LastTimeStamp')
-                                if local_instances[port] == config.getint(port,'LastDataUsage'):
+				lastTimestamp = config.getfloat(port,'LastTimeStamp')
+				if local_instances[port] == config.getint(port,'LastDataUsage'):
 					if  currentTime - lastTimestamp > deltaTime:
-                                        	'''IDLE PORT DETECTED'''
-	                                       	logger.info('Idle port {} detected,to be kill,idle time threshold {}s.'.format(port,deltaTime))
-        	                                config.set(port,'alive',False)
+						'''IDLE PORT DETECTED'''
+						logger.info('Idle port {} detected,to be kill,idle time threshold {}s.'.format(port,deltaTime))
+						config.set(port,'alive',False)
 						report_ss_client_usage(port,local_instances[port])
 						__port_shut_down(port)
 					else:
@@ -375,7 +406,7 @@ def idle_port_proceed(deltaTime = 1800):
 					'''ONLY IF THERE IS AN USAGE DIFFERENCE THEN UPDATE THE TIMESTAMP'''
 					config.set(port,'LastTimeStamp',currentTime)
 					logger.debug('Port {} pass.'.format(port))
-        		except ConfigParser.NoSectionError:
+			except ConfigParser.NoSectionError:
 				config.add_section(port)
 				config.set(port,'LastTimeStamp',currentTime)
 				config.set(port,'LastDataUsage',local_instances[port])
@@ -385,8 +416,8 @@ def idle_port_proceed(deltaTime = 1800):
 				logger.exception('Unexpected error during uninstall idle client port {}'.format(port))
 			finally:
 				config.commit()
-        except:
-                logger.exception('Unexpected error during uninstall idle client port')
+	except:
+		logger.exception('Unexpected error during uninstall idle client port')
 	finally:
 		logger.debug('Idle port check completed')
 
@@ -396,10 +427,12 @@ def sync_ss_client_and_usage():
 
 def local_ip_detect():
 	try:
-		raw_result = subprocess.check_output('{} {}'.format(IFCONFIG,'venet0:0'),shell=True)
-        	ip = re.findall('addr:(\d+\.\d+\.\d+\.\d+)',raw_result)
-        	if ip and ip[0]:
-                	logger.debug('Local public ip detected {}'.format(ip[0]))
+		#raw_result = subprocess.check_output('{} {}'.format(IFCONFIG,'venet0:0'),shell=True)
+		raw_result = subprocess.check_output('{} {}'.format(IP,IPCMD),shell=True)
+		#ip = re.findall('addr:(\d+\.\d+\.\d+\.\d+)',raw_result)
+		ip = re.findall('(\d+\.\d+\.\d+\.\d+)',raw_result)
+		if ip and ip[0]:
+			logger.debug('Local public ip detected {}'.format(ip[0]))
 			return ip[0]
 		else:
 			logger.error('Failed to detect public ip.')
@@ -439,7 +472,7 @@ def service_start_helper():
 				paging_port_monitor_install(config.get('LocalServer','pingport'))
 				logger.debug('Shadowsocks master deamon started')
 			except subprocess.CalledProcessError,e:
-		                logger.error('Failed to setup watch dog with cmd:{}'.format(e.cmd))
+				logger.error('Failed to setup watch dog with cmd:{}'.format(e.cmd))
 				sys.exit(2)
 			except:
 				logger.exception("Unexpected error occured during setup ss client activity watchdog")
@@ -469,7 +502,7 @@ if __name__ == "__main__":
 	config = AutoConfigParser()
 	config.read(CONFIG_FILE)
 	logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',filename=LOG_FILE,level=logging.DEBUG)
-        logger = logging.getLogger('ss_sync')
+	logger = logging.getLogger('ss_sync')
 	logger.debug('SS_SYNC script started with {}'.format(sys.argv))
 
 	SERVER_IP = local_ip_detect()
@@ -483,7 +516,7 @@ if __name__ == "__main__":
 		for o,v in opts:
 			if o == '--sync':
 				sync_ss_client()
-			        sync_client_usage()
+				sync_client_usage()
 				idle_port_proceed()
 			elif o == '--start':
 				service_start_helper()
